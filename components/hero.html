@@ -1,0 +1,154 @@
+<!-- ================= HERO SECTION ================= -->
+<section class="relative pt-6 pb-20 md:pt-14 md:pb-28 overflow-hidden">
+  <div class="max-w-7xl mx-auto px-6 md:px-10">
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-8 items-center">
+      <!-- Left Column: Visual Mockup Showcase (Tablet + Octopus Companion) -->
+      <div class="lg:col-span-6 relative order-2 lg:order-1 flex justify-center items-center">
+        <!-- Ambient Glow Background -->
+        <div class="absolute -inset-4 bg-gradient-to-tr from-blue-200/50 via-sky-200/40 to-indigo-100/50 rounded-full blur-3xl opacity-70"></div>
+        <div class="relative w-full max-w-lg">
+          <!-- Tablet Device Container -->
+          <div class="relative z-10 bg-on-surface rounded-[2rem] p-3.5 border-4 border-on-surface shadow-2xl hero-device-shadow transform -rotate-1 hover:rotate-0 transition-transform duration-300">
+            <!-- Tablet Camera Dot -->
+            <div class="absolute top-1/2 left-2 -translate-y-1/2 w-1.5 h-1.5 bg-outline/50 rounded-full"></div>
+            <!-- Screen Canvas (POS Interface) -->
+            <div class="bg-surface-container-lowest rounded-[1.4rem] overflow-hidden border border-outline-variant/30 text-on-surface">
+              <!-- POS Header Bar -->
+              <div class="h-11 px-4 bg-blue-50 border-b border-outline-variant/30 flex items-center justify-between text-body-sm font-body-sm">
+                <div class="flex items-center gap-2">
+                  <span class="w-2.5 h-2.5 rounded-full bg-blue-500"></span>
+                  <span class="font-bold text-blue-900 font-title-md">Mako Shop</span>
+                  <span class="text-label-sm font-label-sm px-2 py-0.5 rounded-full bg-blue-100 text-blue-800 font-medium">Booth #A14</span>
+                </div>
+                <div class="flex items-center gap-2 text-outline">
+                  <span class="material-symbols-outlined text-sm">wifi</span>
+                  <span class="material-symbols-outlined text-sm">battery_full</span>
+                </div>
+              </div>
+              <!-- POS Content Layout -->
+              <div class="grid grid-cols-12 p-3 gap-3">
+                <!-- Product Grid (8 cols) -->
+                <div class="col-span-7 space-y-2.5">
+                  <!-- Category Pills -->
+                  <div class="flex gap-1.5 overflow-x-auto pb-1 text-label-sm font-label-sm no-scrollbar">
+                    <span class="px-2.5 py-1 rounded-full bg-blue-600 text-white whitespace-nowrap font-medium" data-i18n="pos_all">ทั้งหมด</span>
+                    <span class="px-2.5 py-1 rounded-full bg-blue-50 text-blue-700 whitespace-nowrap">Sticker</span>
+                    <span class="px-2.5 py-1 rounded-full bg-blue-50 text-blue-700 whitespace-nowrap">Postcard</span>
+                    <span class="px-2.5 py-1 rounded-full bg-blue-50 text-blue-700 whitespace-nowrap">Keyring</span>
+                  </div>
+                  <!-- Item Tiles Grid -->
+                  <div class="grid grid-cols-2 gap-2">
+                    <!-- Tile 1 -->
+                    <div class="bg-blue-50/60 rounded-xl p-2 border border-blue-100 flex flex-col items-center text-center cursor-pointer hover:border-blue-400 transition-colors">
+                      <div class="w-12 h-12 rounded-lg bg-white flex items-center justify-center text-2xl mb-1 shadow-xs">🐱</div>
+                      <span class="text-label-sm font-label-sm truncate w-full text-on-surface">Sticker Cat Day</span>
+                      <span class="text-blue-600 font-bold text-label-md font-label-md">฿45</span>
+                    </div>
+                    <!-- Tile 2 -->
+                    <div class="bg-blue-50/60 rounded-xl p-2 border border-blue-100 flex flex-col items-center text-center cursor-pointer hover:border-blue-400 transition-colors">
+                      <div class="w-12 h-12 rounded-lg bg-white flex items-center justify-center text-2xl mb-1 shadow-xs">🌸</div>
+                      <span class="text-label-sm font-label-sm truncate w-full text-on-surface">Floral Acrylic</span>
+                      <span class="text-blue-600 font-bold text-label-md font-label-md">฿120</span>
+                    </div>
+                    <!-- Tile 3 -->
+                    <div class="bg-blue-50/60 rounded-xl p-2 border border-blue-100 flex flex-col items-center text-center cursor-pointer hover:border-blue-400 transition-colors">
+                      <div class="w-12 h-12 rounded-lg bg-white flex items-center justify-center text-2xl mb-1 shadow-xs">☕</div>
+                      <span class="text-label-sm font-label-sm truncate w-full text-on-surface">Coffee Boy Postcard</span>
+                      <span class="text-blue-600 font-bold text-label-md font-label-md">฿35</span>
+                    </div>
+                    <!-- Tile 4 -->
+                    <div class="bg-blue-50/60 rounded-xl p-2 border border-blue-100 flex flex-col items-center text-center cursor-pointer hover:border-blue-400 transition-colors">
+                      <div class="w-12 h-12 rounded-lg bg-white flex items-center justify-center text-2xl mb-1 shadow-xs">✨</div>
+                      <span class="text-label-sm font-label-sm truncate w-full text-on-surface">Holo Memo Pad</span>
+                      <span class="text-blue-600 font-bold text-label-md font-label-md">฿80</span>
+                    </div>
+                  </div>
+                </div>
+                <!-- Checkout Cart Drawer (5 cols) -->
+                <div class="col-span-5 bg-slate-50/70 rounded-xl p-2.5 border border-outline-variant/30 flex flex-col justify-between">
+                  <div>
+                    <div class="flex items-center justify-between pb-1.5 border-b border-outline-variant/30 text-label-sm font-label-sm text-on-surface">
+                      <span class="font-bold" data-i18n="pos_order_title">รายการสั่งซื้อ (3)</span>
+                      <span class="text-rose-500 text-[10px] cursor-pointer" data-i18n="pos_clear">เคลียร์</span>
+                    </div>
+                    <div class="divide-y divide-outline-variant/20 py-1 text-label-sm font-label-sm">
+                      <div class="py-1 flex justify-between">
+                        <span class="truncate pr-1 text-on-surface-variant">Sticker Cat × 2</span>
+                        <span class="font-semibold">฿90</span>
+                      </div>
+                      <div class="py-1 flex justify-between">
+                        <span class="truncate pr-1 text-on-surface-variant">Floral Acrylic × 1</span>
+                        <span class="font-semibold">฿120</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="pt-2 border-t border-outline-variant/30 space-y-2">
+                    <div class="flex justify-between items-center text-label-sm font-label-sm">
+                      <span class="text-outline" data-i18n="pos_total">ยอดรวม</span>
+                      <span class="text-headline-md font-headline-md font-bold text-blue-700">฿210</span>
+                    </div>
+                    <!-- Quick Pay Button -->
+                    <button class="w-full bg-blue-600 hover:bg-blue-700 text-white rounded-lg py-1.5 text-label-md font-label-md font-bold flex items-center justify-center gap-1 shadow-xs transition-colors">
+                      <span class="material-symbols-outlined text-[16px]">qr_code_2</span>
+                      <span>PromptPay</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <!-- Mascot Companion Flying (Octopus Mascot) -->
+          <div class="absolute -bottom-8 -left-8 md:-bottom-10 md:-left-12 z-20 w-32 h-32 md:w-40 md:h-40 drop-shadow-xl animate-bounce" style="animation-duration: 4s;">
+          </div>
+        </div>
+      </div>
+      <!-- Right Column: Hero Content & CTAs -->
+      <div class="lg:col-span-6 space-y-6 order-1 lg:order-2 text-left">
+        <!-- Soft Pill Badge -->
+        <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-blue-50 border border-blue-200/80 shadow-xs text-blue-700 font-label-md text-label-md">
+          <span class="text-sm">✨</span>
+          <span class="font-medium" data-i18n="hero_badge">POS สำหรับสายผลิต &amp; ออกบูธโดยเฉพาะ</span>
+        </div>
+        <!-- Main Display Headline -->
+        <h1 class="text-display-hero-mobile md:text-display-hero font-display-hero tracking-tight text-on-surface" data-i18n-html="hero_headline_html">
+          ระบบขายหน้าร้าน<br/>
+          <span class="text-blue-700 underline decoration-blue-300 decoration-wavy underline-offset-8">ที่เข้าใจสายผลิตตัวจริง</span>
+        </h1>
+        <!-- Body Description -->
+        <p class="text-body-lg font-body-lg text-on-surface-variant max-w-xl" data-i18n="hero_desc">
+          จัดการสต็อก คิดเงิน ออกรายงาน — ครบในที่เดียว ใช้งานได้ทั้งบนแท็บเล็ตที่บูธ และคอมพิวเตอร์ที่บ้าน โดยไม่ต้องติดตั้งแอปพลิเคชันให้ยุ่งยาก
+        </p>
+        <!-- CTAs Area -->
+        <div class="pt-2 flex flex-col sm:flex-row items-stretch sm:items-center gap-4">
+          <!-- Google Sign-in Primary Button -->
+          <button class="open-login-trigger inline-flex items-center justify-center gap-3 bg-blue-600 hover:bg-blue-700 active:scale-95 text-white font-bold text-title-md font-title-md px-8 py-4 rounded-full shadow-md hover:shadow-lg transition-all duration-200">
+            <svg class="w-5 h-5 fill-current" viewBox="0 0 24 24">
+              <path d="M12.24 10.285V13.8h6.887C18.2 16.14 15.645 17.8 12.24 17.8c-3.263 0-5.91-2.647-5.91-5.91s2.647-5.91 5.91-5.91c1.47 0 2.81.54 3.84 1.437l2.67-2.67C17.065 3.14 14.775 2.2 12.24 2.2 6.83 2.2 2.44 6.59 2.44 12s4.39 9.8 9.8 9.8c5.655 0 9.4-3.975 9.4-9.56 0-.64-.06-1.26-.17-1.955H12.24z"></path>
+            </svg>
+            <span data-i18n="hero_google_btn">เข้าสู่ระบบด้วย Google</span>
+          </button>
+          <!-- Secondary Action: Demo Link -->
+          <a class="inline-flex items-center justify-center gap-2 bg-white hover:bg-slate-50 text-on-surface font-semibold text-body-lg font-body-lg px-6 py-4 rounded-full border border-outline-variant/40 hover:border-blue-400 shadow-xs transition-all duration-150" href="#features">
+            <span class="material-symbols-outlined text-blue-600 text-[20px]">play_circle</span>
+            <span data-i18n="hero_demo_btn">ดูตัวอย่างการใช้งาน (Demo)</span>
+          </a>
+        </div>
+        <!-- Quick Trust Badges -->
+        <div class="flex flex-wrap items-center gap-6 pt-2 text-label-md font-label-md text-on-surface-variant">
+          <div class="flex items-center gap-1.5">
+            <span class="material-symbols-outlined text-blue-600 text-lg">check_circle</span>
+            <span data-i18n="trust_free">เริ่มใช้ฟรี ไม่ต้องผูกบัตร</span>
+          </div>
+          <div class="flex items-center gap-1.5">
+            <span class="material-symbols-outlined text-blue-600 text-lg">check_circle</span>
+            <span data-i18n="trust_browser">เปิดผ่านเบราว์เซอร์ได้ทันที</span>
+          </div>
+          <div class="flex items-center gap-1.5">
+            <span class="material-symbols-outlined text-blue-600 text-lg">check_circle</span>
+            <span data-i18n="trust_payment">รองรับเงินสด &amp; QR พร้อมเพย์</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
