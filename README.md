@@ -115,6 +115,18 @@ flutter test
 
 ---
 
+## 🤖 เกี่ยวกับการพัฒนาโค้ด (AI-Assisted Development Note)
+
+> 🙏 **หมายเหตุชี้แจงอย่างสุภาพ (Polite Disclosure):**
+> 
+> ซอร์สโค้ดและระบบการทำงานของโปรเจกต์นี้ได้รับการพัฒนาขึ้นผ่านความร่วมมือและการเขียนโค้ดร่วมกัน (Pair Programming) ระหว่างผู้พัฒนา (**Pitchaya Waree**) และ **ระบบปัญญาประดิษฐ์ (AI Coding Assistant)** เพื่อช่วยอำนวยความสะดวกในการออกแบบสถาปัตยกรรมระบบ Offline-First, การคำนวณสัดส่วนส่วนลดหลายศิลปิน (Proportional Discounts), ระบบสรุปยอดปิดงาน (Settlement & Commission), ตลอดจนการสร้างชุดแบบทดสอบอัตโนมัติ (Automated Tests) ทั้งหมด
+> 
+> ทางผู้พัฒนาได้ทำการตรวจสอบโค้ด (Code Review), รันการทดสอบระบบ (Test Suite), และปรับปรุงคุณภาพโค้ดอย่างรอบคอบ เพื่อให้ระบบทำงานได้อย่างราบรื่นและมีเสถียรภาพสูงสุด หากท่านพบข้อผิดพลาดหรือมีข้อเสนอแนะประการใด สามารถแจ้งหรือร่วมส่งคำแนะนำเข้ามาพัฒนาต่อยอดร่วมกันได้เสมอครับ
+> 
+> *This codebase was developed collaboratively through AI pair programming, thoroughly reviewed and tested to ensure reliability, safety, and performance.*
+
+---
+
 ## 👨‍💻 ผู้พัฒนา & ลิขสิทธิ์ (Authors & License)
 - พัฒนาโดย **Pitchaya Waree**
 - ลิขสิทธิ์ภายใต้ [MIT License](LICENSE)
