@@ -1,9 +1,9 @@
 <!-- ================= TOP NAVIGATION BAR ================= -->
-<header class="docked full-width top sticky top-0 z-40 bg-slate-50/80 backdrop-blur-md border-b border-outline-variant/30">
-  <div class="w-full max-w-7xl mx-auto px-6 md:px-10 h-20 flex items-center justify-between">
+<header class="docked full-width top sticky top-0 z-40 bg-slate-50/90 backdrop-blur-md border-b border-outline-variant/30">
+  <div class="w-full max-w-7xl mx-auto px-4 sm:px-6 md:px-10 h-16 sm:h-20 flex items-center justify-between">
     <!-- Brand & Mascot Logo -->
-    <a class="text-headline-md font-headline-md font-extrabold text-on-surface tracking-tight flex items-center gap-2.5 group" href="#">
-      <div class="w-10 h-10 rounded-2xl bg-blue-50 flex items-center justify-center p-1.5 border border-blue-200 shadow-sm transition-transform duration-200 group-hover:scale-105">
+    <a class="text-xl sm:text-headline-md font-headline-md font-extrabold text-on-surface tracking-tight flex items-center gap-2 sm:gap-2.5 group" href="#">
+      <div class="w-8 h-8 sm:w-10 sm:h-10 rounded-xl sm:rounded-2xl bg-blue-50 flex items-center justify-center p-1 sm:p-1.5 border border-blue-200 shadow-sm transition-transform duration-200 group-hover:scale-105">
         <!-- Mascot Octopus Icon -->
         <svg aria-label="MyPOS cute octopus mascot logo icon" class="w-full h-full text-blue-600 fill-current" viewBox="0 0 48 48">
           <path d="M24 4C14.06 4 6 12.06 6 22c0 4.95 2.01 9.43 5.25 12.68.74.74 1.75 1.15 2.79 1.15h1.24c.73 0 1.39.4 1.72 1.05.77 1.51 2.25 2.65 4.02 2.97.98.18 1.98-.44 2.19-1.42.16-.76.78-1.33 1.56-1.42.79-.09 1.54.34 1.83 1.08.77 1.95 2.76 3.29 5.04 3.06 2.03-.2 3.7-1.64 4.19-3.61.18-.74.82-1.28 1.58-1.33.77-.05 1.48.42 1.74 1.14.77 2.13 3.01 3.51 5.37 3.01 2.06-.44 3.65-2.14 3.84-4.22.06-.66.56-1.18 1.22-1.26 1.44-.17 2.62-1.12 3.04-2.48C41.86 28.32 42 24.32 42 22 42 12.06 33.94 4 24 4z"></path>
@@ -11,37 +11,55 @@
           <circle cx="30.5" cy="19.5" fill="#111c2d" r="2.8"></circle>
           <circle cx="18.5" cy="18.5" fill="#ffffff" r="1"></circle>
           <circle cx="31.5" cy="18.5" fill="#ffffff" r="1"></circle>
-          <!-- Cute Blush -->
           <ellipse cx="14" cy="24" fill="#60a5fa" opacity="0.6" rx="2.5" ry="1.5"></ellipse>
           <ellipse cx="34" cy="24" fill="#60a5fa" opacity="0.6" rx="2.5" ry="1.5"></ellipse>
-          <!-- Smile -->
           <path d="M21 24.5c.8 1.5 2.2 2.5 3 2.5s2.2-1 3-2.5" fill="none" stroke="#111c2d" stroke-linecap="round" stroke-width="2"></path>
         </svg>
       </div>
       <span class="tracking-tight text-on-surface">My<span class="text-blue-600">POS</span></span>
     </a>
 
-    <!-- Center Links (Desktop) -->
-    <nav class="hidden md:flex items-center gap-8 text-label-lg font-label-lg">
-      <a class="text-on-surface-variant hover:text-blue-600 transition-colors" href="#features" data-i18n="footer_features">ฟังก์ชันเด่น</a>
-      <a class="text-on-surface-variant hover:text-blue-600 transition-colors" href="#booths" data-i18n="booth_badge">ระบบออกบูธ</a>
+    <!-- Center Links (Desktop & Tablet Landscape) -->
+    <nav class="hidden md:flex items-center gap-6 lg:gap-8 text-label-lg font-label-lg">
+      <a class="text-on-surface-variant hover:text-blue-600 transition-colors py-2" href="#features" data-i18n="footer_features">ฟังก์ชันเด่น</a>
+      <a class="text-on-surface-variant hover:text-blue-600 transition-colors py-2" href="#booths" data-i18n="booth_badge">ระบบออกบูธ</a>
     </nav>
 
     <!-- Trailing Action Cluster -->
-    <div class="flex items-center gap-3">
+    <div class="flex items-center gap-2 sm:gap-3">
       <!-- Language Switcher Pill -->
-      <div class="flex items-center bg-white border border-outline-variant/40 rounded-full p-1 text-label-md font-label-md shadow-xs">
-        <button id="lang-btn-th" class="px-2.5 py-1 rounded-full bg-blue-600 text-white font-semibold transition-all">TH</button>
-        <button id="lang-btn-en" class="px-2.5 py-1 rounded-full text-on-surface-variant hover:text-blue-600 transition-colors">EN</button>
+      <div class="flex items-center bg-white border border-outline-variant/40 rounded-full p-0.5 sm:p-1 text-xs sm:text-label-md font-medium shadow-xs">
+        <button id="lang-btn-th" class="px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-full bg-blue-600 text-white font-semibold transition-all">TH</button>
+        <button id="lang-btn-en" class="px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-full text-on-surface-variant hover:text-blue-600 transition-colors">EN</button>
       </div>
 
       <!-- Auth Button Container (Toggles between Login Button & User Profile Pill) -->
       <div id="auth-header-container">
-        <button id="nav-login-btn" class="open-login-trigger inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 active:scale-95 text-white text-label-lg font-label-lg px-5 py-2.5 rounded-full shadow-xs transition-all duration-150 ease-out">
-          <span class="material-symbols-outlined text-[18px]">account_circle</span>
-          <span data-i18n="nav_login">เข้าสู่ระบบ / สมัครใช้งาน</span>
+        <button id="nav-login-btn" class="open-login-trigger inline-flex items-center gap-1.5 sm:gap-2 bg-blue-600 hover:bg-blue-700 active:scale-95 text-white text-xs sm:text-label-lg font-semibold sm:font-label-lg px-3 sm:px-5 py-2 sm:py-2.5 rounded-full shadow-xs transition-all duration-150 ease-out">
+          <span class="material-symbols-outlined text-[16px] sm:text-[18px]">account_circle</span>
+          <span class="hidden sm:inline" data-i18n="nav_login">เข้าสู่ระบบ / สมัครใช้งาน</span>
+          <span class="inline sm:hidden" data-i18n="nav_login_short">เข้าสู่ระบบ</span>
         </button>
       </div>
+
+      <!-- Mobile Menu Toggle Button (Phones & Compact Tablets) -->
+      <button id="mobile-menu-btn" class="md:hidden w-9 h-9 rounded-full flex items-center justify-center text-on-surface hover:bg-slate-200/60 active:scale-95 transition-colors" aria-label="Toggle navigation menu">
+        <span class="material-symbols-outlined text-xl" id="mobile-menu-icon">menu</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Mobile Dropdown Navigation Panel -->
+  <div id="mobile-menu-panel" class="hidden md:hidden bg-white/95 backdrop-blur-md border-b border-outline-variant/30 px-6 py-4 space-y-3 transition-all duration-200">
+    <a class="block py-2 text-sm font-semibold text-on-surface hover:text-blue-600 border-b border-slate-100 mobile-nav-link" href="#features" data-i18n="footer_features">
+      ฟังก์ชันเด่น
+    </a>
+    <a class="block py-2 text-sm font-semibold text-on-surface hover:text-blue-600 border-b border-slate-100 mobile-nav-link" href="#booths" data-i18n="booth_badge">
+      ระบบออกบูธ
+    </a>
+    <div class="pt-2 flex items-center justify-between text-xs text-on-surface-variant">
+      <span>MyPOS for Mobile &amp; iPad</span>
+      <span class="px-2 py-0.5 rounded-full bg-blue-50 text-blue-600 font-semibold">v1.2</span>
     </div>
   </div>
 </header>

@@ -23,3 +23,25 @@
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
+
+/* Mobile & Touch Optimizations */
+html, body {
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+  text-size-adjust: 100%;
+  -webkit-text-size-adjust: 100%;
+}
+
+/* Safe Area Insets for Modern Mobile Devices (iPhone notch / home bar) */
+.safe-top {
+  padding-top: max(env(safe-area-inset-top), 0.75rem);
+}
+.safe-bottom {
+  padding-bottom: max(env(safe-area-inset-bottom), 1rem);
+}
+
+/* Smooth Touch Momentum Scrolling */
+.touch-scroll {
+  -webkit-overflow-scrolling: touch;
+}
+

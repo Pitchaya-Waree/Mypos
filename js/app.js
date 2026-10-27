@@ -20,6 +20,32 @@ async function loadComponents() {
   }));
 }
 
+function initMobileMenu() {
+  const menuBtn = document.getElementById('mobile-menu-btn');
+  const menuPanel = document.getElementById('mobile-menu-panel');
+  const menuIcon = document.getElementById('mobile-menu-icon');
+  if (!menuBtn || !menuPanel) return;
+
+  menuBtn.addEventListener('click', () => {
+    const isHidden = menuPanel.classList.contains('hidden');
+    if (isHidden) {
+      menuPanel.classList.remove('hidden');
+      if (menuIcon) menuIcon.textContent = 'close';
+    } else {
+      menuPanel.classList.add('hidden');
+      if (menuIcon) menuIcon.textContent = 'menu';
+    }
+  });
+
+  // Close when clicking any nav link inside mobile panel
+  menuPanel.querySelectorAll('.mobile-nav-link').forEach(link => {
+    link.addEventListener('click', () => {
+      menuPanel.classList.add('hidden');
+      if (menuIcon) menuIcon.textContent = 'menu';
+    });
+  });
+}
+
 // Initialize Application once DOM is ready
 document.addEventListener('DOMContentLoaded', async () => {
   // 1. Load HTML modular components
@@ -34,4 +60,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   if (typeof initAuthModal === 'function') {
     initAuthModal();
   }
+
+  // 4. Initialize Mobile Drawer Menu
+  initMobileMenu();
 });
+
