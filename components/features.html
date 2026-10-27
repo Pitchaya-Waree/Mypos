@@ -1,68 +1,71 @@
 <!-- ================= 3 CORE STARTUP FEATURE CARDS ================= -->
-<section class="py-16 md:py-24 bg-white border-y border-outline-variant/20" id="features">
-  <div class="max-w-7xl mx-auto px-6 md:px-10">
+<section class="py-12 sm:py-16 md:py-24 bg-white border-y border-outline-variant/20" id="features">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 md:px-10">
     <!-- Section Header -->
-    <div class="text-center max-w-2xl mx-auto mb-16 space-y-3">
-      <span class="text-label-lg font-label-lg text-blue-600 font-bold uppercase tracking-wider" data-i18n="feat_tag">Simple &amp; Fast POS</span>
-      <h2 class="text-headline-lg font-headline-lg text-on-surface" data-i18n="feat_title">3 ฟังก์ชันหลัก สร้างมาเพื่อคนออกบูธโดยเฉพาะ</h2>
-      <p class="text-body-lg font-body-lg text-on-surface-variant" data-i18n="feat_desc">ตัดฟังก์ชันซับซ้อนทิ้งไป เหลือเฉพาะเครื่องมือที่ทำให้คุณขายของหน้าร้านได้อย่างคล่องตัวและไร้กังวล</p>
+    <div class="text-center max-w-2xl mx-auto mb-10 sm:mb-16 space-y-2.5 sm:space-y-3">
+      <span class="text-xs sm:text-label-lg font-bold text-blue-600 uppercase tracking-wider" data-i18n="feat_tag">Simple &amp; Fast POS</span>
+      <h2 class="text-2xl sm:text-3xl md:text-headline-lg font-headline-lg text-on-surface" data-i18n="feat_title">3 ฟังก์ชันหลัก สร้างมาเพื่อคนออกบูธโดยเฉพาะ</h2>
+      <p class="text-sm sm:text-body-lg text-on-surface-variant" data-i18n="feat_desc">ตัดฟังก์ชันซับซ้อนทิ้งไป เหลือเฉพาะเครื่องมือที่ทำให้คุณขายของหน้าร้านได้อย่างคล่องตัวและไร้กังวล</p>
     </div>
-    <!-- 3 Feature Cards Grid -->
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+
+    <!-- 3 Feature Cards Grid (Mobile 1 col, Tablet 2-3 col, Desktop 3 col) -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
       <!-- Card 1: Fast Cashier & QR Payment -->
-      <div class="bg-white rounded-2xl p-8 border border-blue-100 custom-card-shadow flex flex-col justify-between hover:-translate-y-1.5 transition-all duration-200">
+      <div class="bg-white rounded-2xl p-6 sm:p-8 border border-blue-100 custom-card-shadow flex flex-col justify-between hover:-translate-y-1.5 transition-all duration-200">
         <div>
-          <div class="w-14 h-14 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center mb-6 border border-blue-100 shadow-xs">
-            <span class="material-symbols-outlined text-3xl">point_of_sale</span>
+          <div class="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center mb-5 sm:mb-6 border border-blue-100 shadow-xs">
+            <span class="material-symbols-outlined text-2xl sm:text-3xl">point_of_sale</span>
           </div>
-          <h3 class="text-title-md font-title-md font-bold text-on-surface mb-3" data-i18n-html="feat1_title_html">
+          <h3 class="text-lg sm:text-title-md font-bold text-on-surface mb-2.5 sm:mb-3" data-i18n-html="feat1_title_html">
             คิดเงินรวดเร็ว แม้คนแน่นบูธ
-            <span class="block text-body-sm font-body-sm text-blue-600 font-normal mt-0.5">Fast Cashier &amp; QR Payment</span>
+            <span class="block text-xs sm:text-body-sm text-blue-600 font-normal mt-0.5">Fast Cashier &amp; QR Payment</span>
           </h3>
-          <p class="text-body-md font-body-md text-on-surface-variant leading-relaxed" data-i18n="feat1_desc">
+          <p class="text-xs sm:text-body-md text-on-surface-variant leading-relaxed" data-i18n="feat1_desc">
             สแกนไว แตะเลือกของทันใจ รองรับทั้งเงินสดและ PromptPay QR code พร้อมคิดเงินทอนอัตโนมัติ ไม่ต้องกลัวคิดเงินผิดในชั่วโมงเร่งด่วนของงานอีเวนต์
           </p>
         </div>
-        <div class="mt-8 pt-6 border-t border-slate-100 flex items-center gap-2 text-label-md font-label-md text-blue-600 font-semibold">
-          <span class="material-symbols-outlined text-lg">bolt</span>
+        <div class="mt-6 sm:mt-8 pt-5 sm:pt-6 border-t border-slate-100 flex items-center gap-2 text-xs sm:text-label-md text-blue-600 font-semibold">
+          <span class="material-symbols-outlined text-base sm:text-lg">bolt</span>
           <span data-i18n="feat1_badge">กดคิดเงินเสร็จภายใน 3 วินาที</span>
         </div>
       </div>
+
       <!-- Card 2: Multi-Device Sync -->
-      <div class="bg-white rounded-2xl p-8 border border-blue-100 custom-card-shadow flex flex-col justify-between hover:-translate-y-1.5 transition-all duration-200">
+      <div class="bg-white rounded-2xl p-6 sm:p-8 border border-blue-100 custom-card-shadow flex flex-col justify-between hover:-translate-y-1.5 transition-all duration-200">
         <div>
-          <div class="w-14 h-14 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center mb-6 border border-indigo-100 shadow-xs">
-            <span class="material-symbols-outlined text-3xl">devices</span>
+          <div class="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center mb-5 sm:mb-6 border border-indigo-100 shadow-xs">
+            <span class="material-symbols-outlined text-2xl sm:text-3xl">devices</span>
           </div>
-          <h3 class="text-title-md font-title-md font-bold text-on-surface mb-3" data-i18n-html="feat2_title_html">
+          <h3 class="text-lg sm:text-title-md font-bold text-on-surface mb-2.5 sm:mb-3" data-i18n-html="feat2_title_html">
             ใช้ได้ทั้งแท็บเล็ตหน้าร้าน &amp; คอมที่บ้าน
-            <span class="block text-body-sm font-body-sm text-indigo-600 font-normal mt-0.5">Multi-Device Sync</span>
+            <span class="block text-xs sm:text-body-sm text-indigo-600 font-normal mt-0.5">Multi-Device Sync</span>
           </h3>
-          <p class="text-body-md font-body-md text-on-surface-variant leading-relaxed" data-i18n="feat2_desc">
+          <p class="text-xs sm:text-body-md text-on-surface-variant leading-relaxed" data-i18n="feat2_desc">
             รองรับทั้ง iPad, Android tablet และ PC/Mac บนเว็บเบราว์เซอร์ ไม่ต้องพกเครื่องหนัก อัปเดตข้อมูลสินค้าจากที่บ้าน แล้วหยิบแท็บเล็ตไปขายของที่บูธได้ทันที
           </p>
         </div>
-        <div class="mt-8 pt-6 border-t border-slate-100 flex items-center gap-2 text-label-md font-label-md text-indigo-600 font-semibold">
-          <span class="material-symbols-outlined text-lg">cloud_sync</span>
+        <div class="mt-6 sm:mt-8 pt-5 sm:pt-6 border-t border-slate-100 flex items-center gap-2 text-xs sm:text-label-md text-indigo-600 font-semibold">
+          <span class="material-symbols-outlined text-base sm:text-lg">cloud_sync</span>
           <span data-i18n="feat2_badge">ซิงก์ข้อมูลอัตโนมัติ Real-time</span>
         </div>
       </div>
+
       <!-- Card 3: Bulk Import & Real-time Stock -->
-      <div class="bg-white rounded-2xl p-8 border border-blue-100 custom-card-shadow flex flex-col justify-between hover:-translate-y-1.5 transition-all duration-200">
+      <div class="bg-white rounded-2xl p-6 sm:p-8 border border-blue-100 custom-card-shadow flex flex-col justify-between hover:-translate-y-1.5 transition-all duration-200 md:col-span-2 lg:col-span-1">
         <div>
-          <div class="w-14 h-14 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center mb-6 border border-blue-100 shadow-xs">
-            <span class="material-symbols-outlined text-3xl">inventory_2</span>
+          <div class="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center mb-5 sm:mb-6 border border-blue-100 shadow-xs">
+            <span class="material-symbols-outlined text-2xl sm:text-3xl">inventory_2</span>
           </div>
-          <h3 class="text-title-md font-title-md font-bold text-on-surface mb-3" data-i18n-html="feat3_title_html">
+          <h3 class="text-lg sm:text-title-md font-bold text-on-surface mb-2.5 sm:mb-3" data-i18n-html="feat3_title_html">
             จัดการสต็อกสินค้าแบบไม่ง้อ Excel
-            <span class="block text-body-sm font-body-sm text-blue-600 font-normal mt-0.5">Bulk Import &amp; Real-time Stock</span>
+            <span class="block text-xs sm:text-body-sm text-blue-600 font-normal mt-0.5">Bulk Import &amp; Real-time Stock</span>
           </h3>
-          <p class="text-body-md font-body-md text-on-surface-variant leading-relaxed" data-i18n="feat3_desc">
+          <p class="text-xs sm:text-body-md text-on-surface-variant leading-relaxed" data-i18n="feat3_desc">
             นำเข้าสินค้าจำนวนมากด้วยไฟล์ CSV พร้อมดูตัวอย่างก่อนบันทึกจริง รู้ทันทีว่าสินค้าชิ้นไหนขายดี สินค้าชิ้นไหนใกล้หมดสต็อก ป้องกันของขาดมือกลางงาน
           </p>
         </div>
-        <div class="mt-8 pt-6 border-t border-slate-100 flex items-center gap-2 text-label-md font-label-md text-blue-600 font-semibold">
-          <span class="material-symbols-outlined text-lg">table_chart</span>
+        <div class="mt-6 sm:mt-8 pt-5 sm:pt-6 border-t border-slate-100 flex items-center gap-2 text-xs sm:text-label-md text-blue-600 font-semibold">
+          <span class="material-symbols-outlined text-base sm:text-lg">table_chart</span>
           <span data-i18n="feat3_badge">นำเข้าไฟล์ CSV ในคลิกเดียว</span>
         </div>
       </div>

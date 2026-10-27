@@ -59,16 +59,16 @@ function renderAuthState() {
   if (savedUser) {
     const user = JSON.parse(savedUser);
     authContainer.innerHTML = `
-      <div class="flex items-center gap-2.5 bg-white border border-slate-200/80 rounded-full py-1 px-1.5 pr-3 shadow-xs">
-        <div class="w-8 h-8 rounded-full bg-gradient-to-tr from-blue-600 to-indigo-600 text-white font-bold flex items-center justify-center text-xs shadow-xs">
+      <div class="flex items-center gap-2 bg-white border border-slate-200/80 rounded-full py-1 px-1.5 pr-2 sm:pr-3 shadow-xs">
+        <div class="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-gradient-to-tr from-blue-600 to-indigo-600 text-white font-bold flex items-center justify-center text-[10px] sm:text-xs shadow-xs">
           ${user.avatar || 'U'}
         </div>
         <div class="hidden sm:block text-left text-xs leading-tight">
           <span class="block font-bold text-slate-800">${user.name}</span>
           <span class="block text-[10px] text-slate-500">${user.email}</span>
         </div>
-        <button id="logout-btn" class="ml-1 text-slate-400 hover:text-rose-600 p-1 rounded-full hover:bg-slate-100 transition-colors" title="${i18n[currentLang].sign_out}">
-          <span class="material-symbols-outlined text-base">logout</span>
+        <button id="logout-btn" class="ml-0.5 sm:ml-1 text-slate-400 hover:text-rose-600 p-1 rounded-full hover:bg-slate-100 transition-colors" title="${i18n[currentLang].sign_out}">
+          <span class="material-symbols-outlined text-sm sm:text-base">logout</span>
         </button>
       </div>
     `;
@@ -78,9 +78,10 @@ function renderAuthState() {
     }
   } else {
     authContainer.innerHTML = `
-      <button id="nav-login-btn" class="open-login-trigger inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 active:scale-95 text-white text-label-lg font-label-lg px-5 py-2.5 rounded-full shadow-xs transition-all duration-150 ease-out">
-        <span class="material-symbols-outlined text-[18px]">account_circle</span>
-        <span>${i18n[currentLang].nav_login}</span>
+      <button id="nav-login-btn" class="open-login-trigger inline-flex items-center gap-1.5 sm:gap-2 bg-blue-600 hover:bg-blue-700 active:scale-95 text-white text-xs sm:text-label-lg font-semibold sm:font-label-lg px-3 sm:px-5 py-2 sm:py-2.5 rounded-full shadow-xs transition-all duration-150 ease-out">
+        <span class="material-symbols-outlined text-[16px] sm:text-[18px]">account_circle</span>
+        <span class="hidden sm:inline">${i18n[currentLang].nav_login}</span>
+        <span class="inline sm:hidden">${i18n[currentLang].nav_login_short || 'เข้าสู่ระบบ'}</span>
       </button>
     `;
   }

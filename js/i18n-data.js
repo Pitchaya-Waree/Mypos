@@ -3,6 +3,8 @@ const i18n = {
   th: {
     page_title: "MyPOS - ระบบขายหน้าร้าน ที่เข้าใจสายผลิตตัวจริง",
     nav_login: "เข้าสู่ระบบ / สมัครใช้งาน",
+    nav_login_short: "เข้าสู่ระบบ",
+    nav_menu: "เมนู",
     pos_all: "ทั้งหมด",
     pos_order_title: "รายการสั่งซื้อ (3)",
     pos_clear: "เคลียร์",
@@ -63,6 +65,8 @@ const i18n = {
   en: {
     page_title: "MyPOS - Point of Sale Built for Real Creators",
     nav_login: "Sign In / Register",
+    nav_login_short: "Sign In",
+    nav_menu: "Menu",
     pos_all: "All Items",
     pos_order_title: "Order Items (3)",
     pos_clear: "Clear",

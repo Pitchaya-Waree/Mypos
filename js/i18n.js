@@ -32,11 +32,11 @@ function applyLanguage(lang) {
   const btnEn = document.getElementById('lang-btn-en');
   if (btnTh && btnEn) {
     if (lang === 'th') {
-      btnTh.className = "px-2.5 py-1 rounded-full bg-blue-600 text-white font-semibold shadow-xs transition-all";
-      btnEn.className = "px-2.5 py-1 rounded-full text-on-surface-variant hover:text-blue-600 transition-colors";
+      btnTh.className = "px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-full bg-blue-600 text-white font-semibold shadow-xs transition-all";
+      btnEn.className = "px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-full text-on-surface-variant hover:text-blue-600 transition-colors";
     } else {
-      btnEn.className = "px-2.5 py-1 rounded-full bg-blue-600 text-white font-semibold shadow-xs transition-all";
-      btnTh.className = "px-2.5 py-1 rounded-full text-on-surface-variant hover:text-blue-600 transition-colors";
+      btnEn.className = "px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-full bg-blue-600 text-white font-semibold shadow-xs transition-all";
+      btnTh.className = "px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-full text-on-surface-variant hover:text-blue-600 transition-colors";
     }
   }
 
