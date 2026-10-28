@@ -47,20 +47,20 @@
 ## 📂 โครงสร้างโปรเจกต์ (Project Structure)
 
 ```text
-pitchaya_project/
-├── Mypos/                     # เว็บ Landing Page & UI Components (Tailwind CSS, i18n)
-│   ├── index.html             # หน้าหลัก Landing Page
-│   ├── components/            # ส่วนประกอบ UI (Hero, Features, Booth-Ready, Navbar, CTA)
-│   ├── css/                   # สไตล์ชีต
-│   └── js/                    # Script ควบคุม i18n และ Interactive Logic
-│
-└── booth_pos_app/             # แอปพลิเคชัน Booth POS (Flutter App)
-    ├── lib/
-    │   ├── models/            # Data Models (Shop, Member, Artist, Category, Product, Order, Settlement)
-    │   ├── services/          # Local Hive Database & PromptPay Generator
-    │   ├── providers/         # PosProvider (State Management & Multi-Artist Calculations)
-    │   └── views/             # หน้าจอ (POS, Inventory, Settlement, Team, History, Reports, Settings)
-    └── test/                  # Automated Acceptance & Unit Tests
+Mypos/
+├── lib/                       # โค้ดหลักของ Flutter App
+│   ├── models/                # Data Models (Shop, Member, Artist, Category, Product, Order, Settlement)
+│   ├── services/              # Local Hive Database & PromptPay Generator
+│   ├── providers/             # PosProvider (State Management & Multi-Artist Calculations)
+│   └── views/                 # หน้าจอ (POS, Inventory, Settlement, Team, History, Reports, Settings)
+├── test/                      # Automated Acceptance & Unit Tests (18 tests passing)
+├── pubspec.yaml               # Flutter Dependencies & Configuration
+├── index.html                 # เว็บไซต์ Landing Page แนะนำระบบ MyPOS
+├── components/                # ส่วนประกอบ UI ของเว็บ Landing Page
+├── css/                       # สไตล์ชีต
+├── js/                        # Script ควบคุม i18n
+├── plan_v1.5.md               # ข้อกำหนดสถาปัตยกรรม Data Model & Acceptance Criteria
+└── 9arm-skills/               # Agent skills
 ```
 
 ---
@@ -73,13 +73,10 @@ pitchaya_project/
 
 ### 1. รันแอปพลิเคชัน Flutter (Booth POS App)
 ```bash
-# 1. เข้าสู่โฟลเดอร์แอป
-cd booth_pos_app
-
-# 2. ติดตั้ง Dependencies
+# 1. ติดตั้ง Dependencies
 flutter pub get
 
-# 3. รันบน Web Browser (โหมดทดสอบ)
+# 2. รันบน Web Browser (โหมดทดสอบ)
 flutter run -d chrome
 
 # หรือรันบน Windows Desktop
@@ -88,19 +85,17 @@ flutter run -d windows
 
 ### 2. Build Web สำหรับใช้งาน PWA บน iPad / Safari
 ```bash
-cd booth_pos_app
 flutter build web --release
 ```
-ไฟล์สำหรับ Deploy จะอยู่ที่โฟลเดอร์ `booth_pos_app/build/web/` สามารถนำไปติดตั้งบน Web Server หรือ Firebase Hosting ได้ทันที
+ไฟล์สำหรับ Deploy จะอยู่ที่โฟลเดอร์ `build/web/` สามารถนำไปติดตั้งบน Web Server หรือ Firebase Hosting ได้ทันที
 
 ---
 
 ## 🧪 การรันชุดทดสอบ (Automated Testing)
 
-โปรเจกต์มีชุดทดสอบครอบคลุมเงื่อนไข Acceptance Criteria ตามเอกสาร `plan_v1.5.md`:
+โปรเจกต์มีชุดทดสอบครอบคลุมเงื่อนไข Acceptance Criteria ครบ 100%:
 
 ```bash
-cd booth_pos_app
 flutter test
 ```
 
