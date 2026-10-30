@@ -2,18 +2,18 @@
 
 [![Flutter](https://img.shields.io/badge/Flutter-3.24%2B-02569B?logo=flutter)](https://flutter.dev)
 [![Dart](https://img.shields.io/badge/Dart-3.10%2B-0175C2?logo=dart)](https://dart.dev)
-[![Offline-First](https://img.shields.io/badge/Offline--First-Hive%20Local%20DB-16A34A)](#-offline-first-architecture)
-[![Tests](https://img.shields.io/badge/Tests-18%2F18%20Passing-success)](test/v1_5_acceptance_test.dart)
+[![Offline-First](https://img.shields.io/badge/Offline--First-Repository%20%2B%20Offline%20Cache-16A34A)](#-offline-first-architecture)
+[![Tests](https://img.shields.io/badge/Tests-27%2F27%20Passing-success)](test/v1_7_acceptance_test.dart)
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
-> ระบบ POS สำหรับขายสินค้าหน้าบูธงานอาร์ตแฟร์ (Art Fair / Creator Booth) ออกแบบมาสำหรับการใช้งานบน **iPad, Android Tablet, Web PWA และ Desktop** ทำงานแบบ **Offline-First 100%** ไม่มีเน็ตหน้างานก็ขายของและสร้าง QR Code ได้อย่างราบรื่น รองรับการแยกหลายร้านค้า (**Multi-Shop Isolation**) ตามข้อกำหนดแผนงาน [plan_v1.6.md](plan_v1.6.md)
+> ระบบ POS สำหรับขายสินค้าหน้าบูธงานอาร์ตแฟร์ (Art Fair / Creator Booth) ออกแบบมาสำหรับการใช้งานบน **iPad, Android Tablet, Web PWA และ Desktop** ทำงานแบบ **Offline-First 100%** ไม่มีเน็ตหน้างานก็ขายของและสร้าง QR Code ได้อย่างราบรื่น รองรับการแยกหลายร้านค้า (**Multi-Shop Isolation**) คลังกลางสินค้า (Central Catalog) และสถาปัตยกรรม 3 บทบาท (Owner, Manager, Member) ตามข้อกำหนดแผนงาน [plan_v1.7.md](plan_v1.7.md)
 
 ---
 
 ## 🌟 จุดเด่นของระบบ (Key Features)
 
 ### 1. 📴 ทำงานออฟไลน์ 100% (Offline-First Architecture)
-- บันทึกข้อมูลลงฐานข้อมูลเครื่องทันที (**Hive Local Database**) ไม่ต้องพึ่งพาเครือข่ายอินเทอร์เน็ตหน้างาน
+- บันทึกข้อมูลลงฐานข้อมูลเครื่องทันทีผ่าน **Repository Layer & Offline Cache** ไม่ต้องพึ่งพาเครือข่ายอินเทอร์เน็ตหน้างาน
 - จัดการประวัติสต็อกผ่าน `StockMovement` ป้องกันการชนกันของสต็อกเวลาซิงก์
 - แสดงแถบสถานะการซิงก์ (`ออฟไลน์พร้อม` หรือ `X รอซิงก์`) และมีระบบบล็อกการ Logout หากยังมีข้อมูลค้างซิงก์
 
@@ -22,35 +22,40 @@
 - **ป้องกัน Name Collision:** ร้าน A และ ร้าน B สามารถมีสินค้าชื่อเดียวกันได้ (เช่น "Sticker Cat Day") โดยไม่เกิดการ Merge หรือทับซ้อนข้อมูล
 - **ระบบสลับร้านค้า (Shop Switcher):** สลับหน้าร้านทดสอบหรือใช้งานระหว่างร้านค้าได้อย่างง่ายดาย
 
-### 3. 📁 หมวดหมู่สินค้าแบบโฟลเดอร์ (Category Folders - v1.5)
+### 3. 👥 สิทธิ์และบทบาท 3 ระดับ (Three-Tier Roles - v1.7)
+- **Owner (เจ้าของร้าน):** มีสิทธิ์สูงสุด 1 คนต่อร้าน จัดการร้าน, แก้เบอร์ PromptPay, ดู Settlement & ค่าคอมมิชชัน, เชิญ Manager และ Member
+- **Manager (ผู้จัดการร้าน):** จัดการคลังสินค้า หมวดหมู่ อีเวนต์ และศิลปิน, ดูยอดขายทั้งร้าน, ทำการ Void ออร์เดอร์ได้ (แต่ซ่อน Settlement, ราคาทุนศิลปินอื่น และเบอร์ PromptPay)
+- **Member (ทีมงานช่วยขาย):** ขายสินค้า คิดเงิน ยิง QR ดูเฉพาะออร์เดอร์ที่ตัวเองเป็นคนขาย (ไม่สามารถ Void, ไม่สามารถแก้ไขสินค้า และซ่อนราคาทุน)
+
+### 4. 📦 คลังสินค้าส่วนกลาง & เลือกสินค้าเข้างาน (Central Catalog - v1.7)
+- สินค้าสร้างในคลังกลาง อัปโหลดรูปครั้งเดียว
+- แต่ละงาน (Event) สามารถเลือกเฉพาะสินค้า (`eventProducts`) และศิลปิน (`eventArtists`) ที่มาออกบูธจริง
+- ซอฟต์ดีลีท (`active: false`) ปลอดภัย ไม่ลบประวัติการขายเดิม
+
+### 5. 📉 สต็อกติดลบได้พร้อมแจ้งเตือน (Negative Stock Support - v1.7)
+- ไม่บล็อกการคิดเงินเมื่อสต็อกหมด สามารถขายต่อได้แม้สินค้าหมดหน้างาน (เช่น สองเครื่องขายสินค้าชิ้นสุดท้ายพร้อมกันตอนออฟไลน์)
+- สต็อกจะปรับเป็นติดลบ (เช่น -1) พร้อมแจ้งเตือนให้ทีมงานปรับสต็อกจริงภายหลัง
+
+### 6. 📁 หมวดหมู่สินค้าแบบโฟลเดอร์ (Category Folders - v1.5)
 - ระบบโฟลเดอร์จัดระเบียบสินค้า 2 ระดับ (Root Folder → Subfolder) เข้าถึงสินค้าง่ายสำหรับร้านที่มีของหลายสิบชิ้น
 - มีแถบ **Breadcrumb Navigation** (`คลังสินค้า > Sticker > ลายแมว`) กดเลือกย้อนกลับไปโฟลเดอร์หลักได้ทันที
 - ปุ่มสลับดูแบบรวมทั้งหมด (**All Items**) และระบบ **Global Search** ค้นหาชื่อสินค้าข้ามทุกโฟลเดอร์ได้ทันที
 
-### 4. 👥 ตะกร้าสินค้าแบบหลายศิลปิน (Multi-Artist Cart & Proportional Discounts)
+### 7. 👥 ตะกร้าสินค้าแบบหลายศิลปิน (Multi-Artist Cart & Proportional Discounts)
 - 1 บูธแชร์ขายร่วมกับศิลปินหลายคนได้ในบิลเดียวกัน โดยระบบ Snapshot `artist_id` ตอนขายจริง
 - การ์ดสินค้าและรายการในตะกร้าแสดงป้ายชื่อศิลปินเจ้าของสินค้าชัดเจน
 - **ส่วนลดเฉลี่ยสัดส่วนทั้งบิล (Proportional Discount)**: ระบบจะกระจายส่วนลดให้แต่ละศิลปินตามสัดส่วนมูลค่าสินค้าในบิลโดยอัตโนมัติ
 - **ส่วนลดเฉพาะศิลปิน (Artist-Specific Discount)**: สามารถเลือกใส่ส่วนลดเฉพาะสินค้าของศิลปินท่านนั้นได้ โดยไม่กระทบศิลปินท่านอื่น
 
-### 5. 💰 คิดค่าคอมมิชชัน & ปิดยอด (Commission & Settlement)
+### 8. 💰 คิดค่าคอมมิชชัน & ปิดยอด (Commission & Settlement)
 - กำหนดอัตราส่วนแบ่งคอมมิชชัน (`commission_rate %`) แยกเป็นรายศิลปิน
-- หน้าสรุปยอด **Settlement**: สรุปยอดขายรวม (Gross), หักค่าคอมมิชชัน, และยอดสุทธิที่ต้องจ่ายคืนศิลปิน (Net Payout)
+- คำนวณยอดสรุปรายศิลปิน (`artistTotals`) ฝังในบิลออร์เดอร์ทันทีตอนขาย ทำให้สามารถทำ Aggregation สำหรับ Settlement ได้อย่างรวดเร็ว
 - ตัดออเดอร์ยกเลิก (**Voided Orders**) ออกจากยอด Settlement และคืนสต็อกอัตโนมัติ
 - บันทึกสถานะ "จ่ายแล้ว (Mark as Paid)" พร้อมโน้ตช่วยจำ และส่งออกเป็น CSV
 
-### 6. 💳 ชำระเงินรวดเร็ว เหมาะกับจอสัมผัส iPad
+### 9. 💳 ชำระเงินรวดเร็ว เหมาะกับจอสัมผัส iPad
 - **แป้นตัวเลขทัชสกรีน (Touch Numpad)**: กดรับเงินสดได้รวดเร็ว พร้อมปุ่มลัด `พอดี`, `+20`, `+50`, `+100`, `500`, `1000` และคำนวณเงินทอนอัตโนมัติ
 - **พร้อมเพย์ QR แบบ Dynamic**: สร้าง QR Code พร้อมระบุยอดเงินตามมาตรฐาน **EMVCo / BOT PromptPay** สร้างได้โดย **ไม่ต้องต่ออินเทอร์เน็ต**
-
-### 7. 🔐 ระบบสมาชิกทีมงาน & สิทธิ์การมองเห็น (Team & Visibility)
-- บทบาท **Owner** (เจ้าของร้าน): จัดการร้าน, เชิญสมาชิก, ดูยอดและรายงานทั้งหมด
-- บทบาท **Member** (ทีมงานช่วยขาย): ดูสินค้าและขายของได้ **แต่ซ่อนราคาทุน (`cost`) ของศิลปินท่านอื่น** (แสดงเป็น `-`)
-- ระบบสร้างลิงก์เชิญเข้าร่วมร้าน (Invite Token) อายุ 7 วัน
-
-### 8. 🧹 ข้อมูลจำลองแยกส่วน & เริ่มต้นแบบว่างเปล่า (Blank Slate & Mock Seed Data)
-- **Production Blank Slate:** เมื่อติดตั้งหรือเปิดใช้งานครั้งแรก ฐานข้อมูลจะว่างเปล่า 100% พร้อมให้เจ้าของร้านตั้งค่าจริง
-- **MockSeedService:** มีชุดข้อมูลตัวอย่างแยกอิสระ (ร้าน A: Mako Shop #A14 และ ร้าน B: Crafty Fox Studio #B08) พร้อมปุ่มกดโหลด Demo หรือล้างข้อมูลทั้งหมด (Wipe All Data) ได้ทันทีในหน้าตั้งค่า
 
 ---
 
@@ -59,14 +64,22 @@
 ```text
 Mypos/
 ├── lib/                       # โค้ดหลักของ Flutter App
-│   ├── models/                # Data Models (Shop, Member, Invite, Artist, Category, Product, Order, Settlement)
-│   ├── services/              # DatabaseService (Hive), PromptPayService, MockSeedService
+│   ├── models/                # Data Models (Shop, Member, Invite, Artist, Category, Product, Event, Order, Settlement)
+│   ├── repositories/          # Repository Layer (Auth, Shop, Member, Catalog, Event, Order, Stock, Settlement)
+│   ├── services/              # DatabaseService, PromptPayService, MockSeedService
 │   ├── providers/             # PosProvider (State Management & Multi-Artist Calculations)
 │   └── views/                 # หน้าจอ (POS, Inventory, Settlement, Team, History, Reports, Settings)
-├── test/                      # Automated Acceptance & Unit Tests (18 tests passing 100%)
+├── test/                      # Automated Acceptance & Unit Tests (27 tests passing 100%)
+│   ├── v1_5_acceptance_test.dart  # 18 tests (v1.5 & v1.6 criteria)
+│   ├── v1_7_acceptance_test.dart  # 9 tests (v1.7 roles, central catalog, negative stock, artistTotals)
+│   └── widget_test.dart           # Smoke test
+├── firestore.rules            # Firebase Firestore Security Rules (Fine-grained access control)
+├── storage.rules              # Firebase Storage Rules (Image size & role protection)
+├── firestore.indexes.json     # Firestore Composite Indexes
 ├── pubspec.yaml               # Flutter Dependencies & Configuration
 ├── plan_v1.5.md               # ข้อกำหนดสถาปัตยกรรม Data Model & Acceptance Criteria v1.5
 ├── plan_v1.6.md               # ข้อกำหนด Multi-Shop Isolation, Seed Data ร้าน A/B v1.6
+├── plan_v1.7.md               # ข้อกำหนด Flutter + Firebase, 3 Roles, Central Catalog, Negative Stock v1.7
 ├── README.md                  # เอกสารแนะนำและคู่มือโปรเจกต์
 └── README_APP.md              # คู่มือทางเทคนิคสำหรับแอปพลิเคชัน Flutter
 ```
@@ -101,13 +114,13 @@ flutter build web --release
 
 ## 🧪 การรันชุดทดสอบ (Automated Testing)
 
-โปรเจกต์มีชุดทดสอบครอบคลุมเงื่อนไข Acceptance Criteria ตามแผน v1.5 และ v1.6 ครบ 100% (18/18 Tests):
+โปรเจกต์มีชุดทดสอบครอบคลุมเงื่อนไข Acceptance Criteria ตามแผน v1.5, v1.6 และ v1.7 ครบ 100% (27/27 Tests):
 
 ```bash
 flutter test
 ```
 
-### รายการทดสอบที่ผ่านทั้งหมด (18/18 Tests):
+### รายการทดสอบที่ผ่านทั้งหมด (27/27 Tests):
 #### ชุดทดสอบตามแผน v1.5:
 - ✅ `4.5 Proportional Discount`: การเฉลี่ยส่วนลดทั้งบิลตามสัดส่วนยอดขายศิลปิน (30:70)
 - ✅ `4.5 Artist-Specific Discount`: ส่วนลดเฉพาะศิลปิน ไม่กระทบศิลปินคนอื่น
@@ -128,6 +141,17 @@ flutter test
 - ✅ `5.3 Settlement per Shop`: ยอด Settlement และค่าคอมมิชชันของร้าน A (Mako Shop) และ ร้าน B (Crafty Fox) คำนวณถูกต้องตาม Seed Data
 - ✅ `5.4 Cross-Shop Cost Visibility`: ทีมงานร้าน A มองไม่เห็นราคาทุนสินค้าของร้าน B
 - ✅ `5.5 Production Blank Slate`: เริ่มต้นใช้งานแบบฐานข้อมูลว่างเปล่า 100% พร้อมใช้งานจริง
+
+#### ชุดทดสอบตามแผน v1.7 (Three-Tier Roles, Central Catalog, Negative Stock & Firebase Architecture):
+- ✅ `12.1 Three-Tier Role Permissions`: สิทธิ์ของ Owner, Manager และ Member แยกตามขอบเขตความปลอดภัย
+- ✅ `12.1 Cost Visibility Rules`: Owner เห็นทุนทุกคน; Manager และ Member เห็นเฉพาะศิลปินที่ผูก
+- ✅ `12.1 Order Visibility Scope`: Member มองเห็นเฉพาะออร์เดอร์ที่ตัวเองเป็นคนขาย, Owner/Manager เห็นทั้งร้าน
+- ✅ `12.2 Negative Stock Allowed`: สต็อกติดลบได้ (-1) ไม่บล็อกการคิดเงิน และแจ้งเตือนให้ปรับสต็อก
+- ✅ `12.5 Atomic Order & artistTotals Aggregation`: ออร์เดอร์ฝัง artistTotals สรุปยอดรายศิลปินและทำ Settlement aggregation ได้แม่นยำ
+- ✅ `12.4 Central Catalog & Event Selection`: สินค้าคลังกลางถูกเลือกเข้างานผ่าน eventProducts และ eventArtists
+- ✅ `12.3 Multi-Shop Membership`: 1 บัญชีผู้ใช้สามารถดูแลได้หลายร้านผ่าน UserMembership index
+- ✅ `12.1 Single-Void Protection`: Void ออร์เดอร์พร้อมบันทึกเหตุผลและป้องกันการกดยกเลิกซ้ำ
+- ✅ `12.2 Sign-out Guard`: บล็อกการออกจากระบบหากยังมีรายการขายค้างซิงก์
 - ✅ `App Smoke Test`: การโหลด Main Application Widget ได้อย่างสมบูรณ์
 
 ---

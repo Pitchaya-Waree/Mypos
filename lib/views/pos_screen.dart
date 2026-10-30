@@ -612,15 +612,19 @@ class PosScreen extends StatelessWidget {
           shadowColor: Colors.black.withValues(alpha: 0.04),
           child: InkWell(
             borderRadius: BorderRadius.circular(16),
-            onTap: isOutOfStock
-                ? () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('${product.name} หมดสต็อกแล้ว!')),
-                    );
-                  }
-                : () {
-                    pos.addToCart(product);
-                  },
+            onTap: () {
+              pos.addToCart(product);
+              if (product.stock <= 0) {
+                ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('⚠️ เตือน: ${product.name} สต็อกเหลือ ${product.stock - 1} (ติดลบ) กรุณาปรับสต็อกภายหลัง'),
+                    backgroundColor: const Color(0xFFDC2626),
+                    duration: const Duration(seconds: 2),
+                  ),
+                );
+              }
+            },
             child: Padding(
               padding: const EdgeInsets.all(10),
               child: Column(

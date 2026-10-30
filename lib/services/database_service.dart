@@ -219,6 +219,12 @@ class DatabaseService {
     return list.toList();
   }
 
+  Event? getEvent(String id) {
+    final data = _eventsBox.get(id);
+    if (data == null) return null;
+    return Event.fromJson(Map<String, dynamic>.from(data as Map));
+  }
+
   Event? getActiveEvent({String? shopId}) {
     final events = getEvents(shopId: shopId);
     try {
@@ -292,6 +298,12 @@ class DatabaseService {
     await _settlementsBox.put(s.id, s.toJson());
   }
 
+  Settlement? getSettlement(String id) {
+    final data = _settlementsBox.get(id);
+    if (data == null) return null;
+    return Settlement.fromJson(Map<String, dynamic>.from(data as Map));
+  }
+
   // --- Order Operations ---
   List<Order> getOrders({String? shopId}) {
     var list = _ordersBox.values
@@ -304,6 +316,12 @@ class DatabaseService {
     return res;
   }
 
+  Order? getOrder(String id) {
+    final data = _ordersBox.get(id);
+    if (data == null) return null;
+    return Order.fromJson(Map<String, dynamic>.from(data as Map));
+  }
+
   int getUnsyncedOrdersCount({String? shopId}) {
     return getOrders(shopId: shopId).where((o) => !o.synced).length;
   }
@@ -312,13 +330,19 @@ class DatabaseService {
     await _ordersBox.put(order.id, order.toJson());
   }
 
-  Future<void> voidOrder(String orderId) async {
+  Future<void> voidOrder(String orderId, {String? voidedBy, String? voidReason}) async {
     final orderData = _ordersBox.get(orderId);
     if (orderData == null) return;
     final order = Order.fromJson(Map<String, dynamic>.from(orderData as Map));
     if (order.status == OrderStatus.voided) return;
 
-    final updatedOrder = order.copyWith(status: OrderStatus.voided, synced: false);
+    final updatedOrder = order.copyWith(
+      status: OrderStatus.voided,
+      synced: false,
+      voidedAt: DateTime.now(),
+      voidedBy: voidedBy,
+      voidReason: voidReason,
+    );
     await _ordersBox.put(orderId, updatedOrder.toJson());
 
     // Restore stock for all products across all artists in the order
@@ -330,9 +354,14 @@ class DatabaseService {
           orderId: order.id,
           type: StockMovementType.voidAction,
           qtyChange: item.qty,
+          createdBy: voidedBy,
         ));
 
-        await saveProduct(product.copyWith(stock: product.stock + item.qty));
+        await saveProduct(product.copyWith(
+          stock: product.stock + item.qty,
+          updatedAt: DateTime.now(),
+          updatedBy: voidedBy,
+        ));
       }
     }
   }
@@ -342,6 +371,10 @@ class DatabaseService {
     return _stockMovementsBox.values
         .map((e) => StockMovement.fromJson(Map<String, dynamic>.from(e as Map)))
         .toList();
+  }
+
+  List<StockMovement> getMovements(String productId) {
+    return getStockMovements().where((m) => m.productId == productId).toList();
   }
 
   Future<void> addStockMovement(StockMovement movement) async {

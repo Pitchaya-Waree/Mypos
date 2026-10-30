@@ -45,13 +45,15 @@ class _InventoryScreenState extends State<InventoryScreen> {
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        backgroundColor: const Color(0xFF2563EB),
-        foregroundColor: Colors.white,
-        onPressed: () => _showProductDialog(context),
-        icon: const Icon(Icons.add),
-        label: const Text('เพิ่มสินค้า'),
-      ),
+      floatingActionButton: pos.canManageCatalog
+          ? FloatingActionButton.extended(
+              backgroundColor: const Color(0xFF2563EB),
+              foregroundColor: Colors.white,
+              onPressed: () => _showProductDialog(context),
+              icon: const Icon(Icons.add),
+              label: const Text('เพิ่มสินค้า'),
+            )
+          : null,
       body: Column(
         children: [
           // Search & Filter
