@@ -35,6 +35,15 @@ class PosProvider extends ChangeNotifier {
   List<Member> get members => _members;
   Member? get currentMember => _currentMember;
   bool get isOwner => _currentMember == null ? true : _currentMember?.role == MemberRole.owner;
+  bool get isManager => _currentMember?.role == MemberRole.manager;
+  bool get isManagerUp => isOwner || isManager;
+  bool get isMember => _currentMember?.role == MemberRole.member;
+
+  bool get canVoid => isManagerUp;
+  bool get canManageCatalog => isManagerUp;
+  bool get canViewSettlement => isOwner;
+  bool get canViewSettings => isOwner;
+
   List<Invite> get invites => _invites;
   List<Artist> get artists => _artists;
   List<Category> get categories => _categories;
@@ -42,7 +51,16 @@ class PosProvider extends ChangeNotifier {
   List<Event> get events => _events;
   Event? get activeEvent => _activeEvent;
   List<String> get activeEventArtistIds => _activeEventArtistIds;
-  List<Order> get orders => _orders;
+
+  // v1.7: Member sees only orders created by themselves; Owner/Manager see all shop orders
+  List<Order> get orders {
+    if (isMember && _currentMember != null) {
+      return _orders.where((o) => o.createdBy == _currentMember!.userId).toList();
+    }
+    return _orders;
+  }
+  List<Order> get allShopOrders => _orders;
+
   List<CartItem> get cart => List.unmodifiable(_cart);
   String? get currentFolderId => _currentFolderId;
   bool get isAllItemsView => _isAllItemsView;
@@ -134,13 +152,23 @@ class PosProvider extends ChangeNotifier {
 
   void toggleRoleForTesting() {
     if (_currentMember == null) return;
-    final newRole = isOwner ? MemberRole.member : MemberRole.owner;
+    MemberRole newRole;
+    switch (_currentMember!.role) {
+      case MemberRole.owner:
+        newRole = MemberRole.manager;
+        break;
+      case MemberRole.manager:
+        newRole = MemberRole.member;
+        break;
+      case MemberRole.member:
+        newRole = MemberRole.owner;
+        break;
+    }
     _currentMember = _currentMember!.copyWith(role: newRole);
     notifyListeners();
   }
 
-  /// Visibility rule for product cost (Requirement 4.8)
-  /// Owner sees all. Member only sees cost if product belongs to their linked artist.
+  /// Visibility rule for product cost (v1.7: Owner sees all; Manager and Member only see linked artist)
   bool canViewCost(Product product) {
     if (isOwner) return true;
     if (_currentMember?.invitedArtistId != null) {
@@ -201,13 +229,19 @@ class PosProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Filtered Products for POS Touch Grid (considering active event, folders, and search)
+  /// Filtered Products for POS Touch Grid (considering central catalog active flag, eventProducts, eventArtists, folders, and search)
   List<Product> get filteredProducts {
     return _products.where((p) {
-      // 1. Event Artist Filtering (Requirement 4.11)
-      if (_activeEvent != null && _activeEventArtistIds.isNotEmpty) {
-        if (!_activeEventArtistIds.contains(p.artistId)) {
+      // 0. Soft delete check (v1.7)
+      if (!p.active) return false;
+
+      // 1. Event Artist and Event Product Filtering (v1.7)
+      if (_activeEvent != null) {
+        if (_activeEventArtistIds.isNotEmpty && !_activeEventArtistIds.contains(p.artistId)) {
           return false; // Hide products of artists not attending this event
+        }
+        if (_activeEvent!.eventProductIds.isNotEmpty && !_activeEvent!.eventProductIds.contains(p.id)) {
+          return false; // Hide products not selected for this event
         }
       }
 
@@ -259,12 +293,8 @@ class PosProvider extends ChangeNotifier {
     final existingIndex =
         _cart.indexWhere((item) => item.product.id == product.id);
     if (existingIndex >= 0) {
-      if (_cart[existingIndex].qty + 1 > product.stock) {
-        return; // Don't allow exceeding stock (Acceptance Criteria 4.4)
-      }
       _cart[existingIndex].qty += 1;
     } else {
-      if (product.stock < 1) return;
       _cart.add(CartItem(product: product, qty: 1));
     }
     notifyListeners();
@@ -281,8 +311,7 @@ class PosProvider extends ChangeNotifier {
       if (newQty <= 0) {
         _cart.removeAt(index);
       } else {
-        final product = _cart[index].product;
-        _cart[index].qty = newQty > product.stock ? product.stock : newQty;
+        _cart[index].qty = newQty;
         if (_cart[index].discount > _cart[index].product.price * _cart[index].qty) {
           _cart[index].discount = _cart[index].product.price * _cart[index].qty;
         }
@@ -392,7 +421,7 @@ class PosProvider extends ChangeNotifier {
       );
     }).toList();
 
-    // 2. Create Order
+    // 2. Create Order (v1.7: with createdBy, createdAtClient, and artistTotals aggregation)
     final order = Order(
       shopId: shopId,
       eventId: eventId,
@@ -403,23 +432,28 @@ class PosProvider extends ChangeNotifier {
       change: change,
       synced: false,
       createdOffline: true,
+      createdBy: _currentMember?.userId ?? 'anonymous',
+      createdAtClient: DateTime.now(),
       items: orderItems,
     );
 
     await _db.saveOrder(order);
 
-    // 3. Record StockMovement & deduct stock locally
+    // 3. Record StockMovement & deduct stock locally (v1.7: stock can be negative!)
     for (var cartItem in _cart) {
       await _db.addStockMovement(StockMovement(
         productId: cartItem.product.id,
         orderId: order.id,
         type: StockMovementType.sale,
         qtyChange: -cartItem.qty,
+        createdBy: order.createdBy,
       ));
 
       final updatedStock = cartItem.product.stock - cartItem.qty;
       await _db.saveProduct(cartItem.product.copyWith(
-        stock: updatedStock > 0 ? updatedStock : 0,
+        stock: updatedStock,
+        updatedAt: DateTime.now(),
+        updatedBy: order.createdBy,
       ));
     }
 
@@ -428,8 +462,12 @@ class PosProvider extends ChangeNotifier {
     return order;
   }
 
-  Future<void> voidOrder(String orderId) async {
-    await _db.voidOrder(orderId);
+  Future<void> voidOrder(String orderId, {String voidReason = 'Customer void'}) async {
+    await _db.voidOrder(
+      orderId,
+      voidedBy: _currentMember?.userId ?? 'system',
+      voidReason: voidReason,
+    );
     refreshData();
   }
 

@@ -130,6 +130,7 @@ class HistoryScreen extends StatelessWidget {
   }
 
   void _showOrderDetailSheet(BuildContext context, Order order) {
+    final pos = context.read<PosProvider>();
     final isVoided = order.status == OrderStatus.voided;
 
     showModalBottomSheet(
@@ -180,8 +181,8 @@ class HistoryScreen extends StatelessWidget {
                   ],
                 ),
                 const SizedBox(height: 16),
-                // Void Order Button
-                if (!isVoided)
+                // Void Order Button (v1.7: Owner & Manager can void; Member cannot void)
+                if (!isVoided && pos.canVoid)
                   SizedBox(
                     width: double.infinity,
                     child: OutlinedButton.icon(

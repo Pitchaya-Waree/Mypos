@@ -12,6 +12,8 @@ class TeamScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final pos = context.watch<PosProvider>();
     final isOwner = pos.isOwner;
+    final isManagerUp = pos.isManagerUp;
+    final isManager = pos.isManager;
     final currentMember = pos.currentMember;
     final members = pos.members;
     final invites = pos.invites;
@@ -24,7 +26,7 @@ class TeamScreen extends StatelessWidget {
         foregroundColor: const Color(0xFF0F172A),
         elevation: 0,
       ),
-      floatingActionButton: isOwner
+      floatingActionButton: isManagerUp
           ? FloatingActionButton.extended(
               backgroundColor: const Color(0xFF2563EB),
               foregroundColor: Colors.white,
@@ -71,15 +73,21 @@ class TeamScreen extends StatelessWidget {
                             Container(
                               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                               decoration: BoxDecoration(
-                                color: isOwner ? const Color(0xFFDBEAFE) : const Color(0xFFE2E8F0),
+                                color: isOwner
+                                    ? const Color(0xFFDBEAFE)
+                                    : (isManager ? const Color(0xFFFEF3C7) : const Color(0xFFE2E8F0)),
                                 borderRadius: BorderRadius.circular(6),
                               ),
                               child: Text(
-                                isOwner ? '👑 เจ้าของร้าน (Owner)' : '👤 สมาชิกทีมงาน (Member)',
+                                isOwner
+                                    ? '👑 เจ้าของร้าน (Owner)'
+                                    : (isManager ? '🎖️ ผู้จัดการ (Manager)' : '👤 สมาชิก (Member)'),
                                 style: TextStyle(
                                   fontSize: 11,
                                   fontWeight: FontWeight.bold,
-                                  color: isOwner ? const Color(0xFF1D4ED8) : const Color(0xFF334155),
+                                  color: isOwner
+                                      ? const Color(0xFF1D4ED8)
+                                      : (isManager ? const Color(0xFFB45309) : const Color(0xFF334155)),
                                 ),
                               ),
                             ),

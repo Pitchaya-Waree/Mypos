@@ -9,6 +9,8 @@ class Shop {
   final String ownerUserId;
   final String promptpayId;
   final String promptpayName;
+  final String currency;
+  final DateTime createdAt;
 
   Shop({
     String? id,
@@ -16,7 +18,10 @@ class Shop {
     required this.ownerUserId,
     required this.promptpayId,
     required this.promptpayName,
-  }) : id = id ?? _uuid.v4();
+    this.currency = 'THB',
+    DateTime? createdAt,
+  })  : id = id ?? _uuid.v4(),
+        createdAt = createdAt ?? DateTime.now();
 
   Map<String, dynamic> toJson() => {
         'id': id,
@@ -24,6 +29,8 @@ class Shop {
         'ownerUserId': ownerUserId,
         'promptpayId': promptpayId,
         'promptpayName': promptpayName,
+        'currency': currency,
+        'createdAt': createdAt.toIso8601String(),
       };
 
   factory Shop.fromJson(Map<String, dynamic> json) => Shop(
@@ -32,12 +39,17 @@ class Shop {
         ownerUserId: json['ownerUserId'] as String,
         promptpayId: json['promptpayId'] as String,
         promptpayName: json['promptpayName'] as String,
+        currency: (json['currency'] as String?) ?? 'THB',
+        createdAt: json['createdAt'] != null
+            ? DateTime.parse(json['createdAt'] as String)
+            : DateTime.now(),
       );
 
   Shop copyWith({
     String? name,
     String? promptpayId,
     String? promptpayName,
+    String? currency,
   }) {
     return Shop(
       id: id,
@@ -45,12 +57,45 @@ class Shop {
       ownerUserId: ownerUserId,
       promptpayId: promptpayId ?? this.promptpayId,
       promptpayName: promptpayName ?? this.promptpayName,
+      currency: currency ?? this.currency,
+      createdAt: createdAt,
     );
   }
 }
 
-/// 2. Member Model (คนในบูธ — Owner หรือ Member)
-enum MemberRole { owner, member }
+/// 2. User Membership Index (v1.7: 1 Google account can be part of multiple shops)
+class UserMembership {
+  final String shopId;
+  final String shopName;
+  final MemberRole role;
+  final DateTime joinedAt;
+
+  UserMembership({
+    required this.shopId,
+    required this.shopName,
+    required this.role,
+    DateTime? joinedAt,
+  }) : joinedAt = joinedAt ?? DateTime.now();
+
+  Map<String, dynamic> toJson() => {
+        'shopId': shopId,
+        'shopName': shopName,
+        'role': role.name,
+        'joinedAt': joinedAt.toIso8601String(),
+      };
+
+  factory UserMembership.fromJson(Map<String, dynamic> json) => UserMembership(
+        shopId: json['shopId'] as String,
+        shopName: (json['shopName'] as String?) ?? 'Shop',
+        role: MemberRole.values.byName((json['role'] as String?) ?? 'member'),
+        joinedAt: json['joinedAt'] != null
+            ? DateTime.parse(json['joinedAt'] as String)
+            : DateTime.now(),
+      );
+}
+
+/// 3. Member Model (Owner, Manager, or Member)
+enum MemberRole { owner, manager, member }
 
 class Member {
   final String id;
@@ -116,7 +161,7 @@ class Member {
   }
 }
 
-/// 3. Invite Model (คำเชิญเข้าร่วมร้าน - อายุ 7 วัน)
+/// 4. Invite Model (คำเชิญเข้าร่วมร้าน - อายุ 7 วัน)
 enum InviteStatus { pending, accepted, expired, revoked }
 
 class Invite {
@@ -125,6 +170,7 @@ class Invite {
   final String email;
   final String token;
   final String? artistId;
+  final MemberRole role;
   final DateTime createdAt;
   final DateTime expiresAt;
   final InviteStatus status;
@@ -135,6 +181,7 @@ class Invite {
     required this.email,
     String? token,
     this.artistId,
+    this.role = MemberRole.member,
     DateTime? createdAt,
     DateTime? expiresAt,
     this.status = InviteStatus.pending,
@@ -151,6 +198,7 @@ class Invite {
         'email': email,
         'token': token,
         'artistId': artistId,
+        'role': role.name,
         'createdAt': createdAt.toIso8601String(),
         'expiresAt': expiresAt.toIso8601String(),
         'status': status.name,
@@ -162,18 +210,20 @@ class Invite {
         email: json['email'] as String,
         token: json['token'] as String,
         artistId: json['artistId'] as String?,
+        role: MemberRole.values.byName((json['role'] as String?) ?? 'member'),
         createdAt: DateTime.parse(json['createdAt'] as String),
         expiresAt: DateTime.parse(json['expiresAt'] as String),
         status: InviteStatus.values.byName((json['status'] as String?) ?? 'pending'),
       );
 
-  Invite copyWith({InviteStatus? status}) {
+  Invite copyWith({InviteStatus? status, MemberRole? role}) {
     return Invite(
       id: id,
       shopId: shopId,
       email: email,
       token: token,
       artistId: artistId,
+      role: role ?? this.role,
       createdAt: createdAt,
       expiresAt: expiresAt,
       status: status ?? this.status,
@@ -181,13 +231,14 @@ class Invite {
   }
 }
 
-/// 4. Artist Model (Multi-artist with commission rate & member link)
+/// 5. Artist Model
 class Artist {
   final String id;
   final String shopId;
   final String name;
   final String? linkedUserId;
-  final double? commissionRate; // e.g. 10.0 for 10%, null for 0%
+  final double? commissionRate; // Cached/optional for convenience
+  final bool active;
 
   Artist({
     String? id,
@@ -195,6 +246,7 @@ class Artist {
     required this.name,
     this.linkedUserId,
     this.commissionRate,
+    this.active = true,
   }) : id = id ?? _uuid.v4();
 
   Map<String, dynamic> toJson() => {
@@ -203,6 +255,7 @@ class Artist {
         'name': name,
         'linkedUserId': linkedUserId,
         'commissionRate': commissionRate,
+        'active': active,
       };
 
   factory Artist.fromJson(Map<String, dynamic> json) => Artist(
@@ -211,12 +264,14 @@ class Artist {
         name: json['name'] as String,
         linkedUserId: json['linkedUserId'] as String?,
         commissionRate: (json['commissionRate'] as num?)?.toDouble(),
+        active: (json['active'] as bool?) ?? true,
       );
 
   Artist copyWith({
     String? name,
     String? linkedUserId,
     double? commissionRate,
+    bool? active,
   }) {
     return Artist(
       id: id,
@@ -224,11 +279,62 @@ class Artist {
       name: name ?? this.name,
       linkedUserId: linkedUserId ?? this.linkedUserId,
       commissionRate: commissionRate ?? this.commissionRate,
+      active: active ?? this.active,
     );
   }
 }
 
-/// 5. Category Model (Supports hierarchical folders, max 2 levels)
+/// 6. ArtistTerms Model (Owner-only financial agreement)
+class ArtistTerm {
+  final String artistId;
+  final double commissionRate; // percentage
+  final String note;
+
+  ArtistTerm({
+    required this.artistId,
+    required this.commissionRate,
+    this.note = '',
+  });
+
+  Map<String, dynamic> toJson() => {
+        'artistId': artistId,
+        'commissionRate': commissionRate,
+        'note': note,
+      };
+
+  factory ArtistTerm.fromJson(Map<String, dynamic> json) => ArtistTerm(
+        artistId: json['artistId'] as String,
+        commissionRate: (json['commissionRate'] as num).toDouble(),
+        note: (json['note'] as String?) ?? '',
+      );
+}
+
+/// 7. ProductCost Model (Separated document for fine-grained security rules)
+class ProductCost {
+  final String productId;
+  final String artistId;
+  final double cost;
+
+  ProductCost({
+    required this.productId,
+    required this.artistId,
+    required this.cost,
+  });
+
+  Map<String, dynamic> toJson() => {
+        'productId': productId,
+        'artistId': artistId,
+        'cost': cost,
+      };
+
+  factory ProductCost.fromJson(Map<String, dynamic> json) => ProductCost(
+        productId: json['productId'] as String,
+        artistId: json['artistId'] as String,
+        cost: (json['cost'] as num).toDouble(),
+      );
+}
+
+/// 8. Category Model (Supports hierarchical folders, max 2 levels)
 class Category {
   final String id;
   final String shopId;
@@ -277,18 +383,23 @@ class Category {
   }
 }
 
-/// 6. Product Model
+/// 9. Product Model (Central Catalog - stock can be negative!)
 class Product {
   final String id;
   final String shopId;
   final String artistId;
   final String name;
   final String image;
+  final String? imagePath;
+  final String? imageUrl;
   final double price;
   final double cost;
   final String categoryId;
-  final int stock;
+  final int stock; // Can go negative in v1.7!
   final bool isBestseller;
+  final bool active; // Soft delete flag
+  final DateTime? updatedAt;
+  final String? updatedBy;
 
   Product({
     String? id,
@@ -296,12 +407,20 @@ class Product {
     required this.artistId,
     required this.name,
     this.image = '📦',
+    this.imagePath,
+    this.imageUrl,
     required this.price,
     this.cost = 0.0,
     required this.categoryId,
     required this.stock,
     this.isBestseller = false,
+    this.active = true,
+    this.updatedAt,
+    this.updatedBy,
   }) : id = id ?? _uuid.v4();
+
+  bool get isOutOfStock => stock <= 0;
+  bool get isNegativeStock => stock < 0;
 
   Map<String, dynamic> toJson() => {
         'id': id,
@@ -309,11 +428,16 @@ class Product {
         'artistId': artistId,
         'name': name,
         'image': image,
+        'imagePath': imagePath,
+        'imageUrl': imageUrl,
         'price': price,
         'cost': cost,
         'categoryId': categoryId,
         'stock': stock,
         'isBestseller': isBestseller,
+        'active': active,
+        'updatedAt': updatedAt?.toIso8601String(),
+        'updatedBy': updatedBy,
       };
 
   factory Product.fromJson(Map<String, dynamic> json) => Product(
@@ -322,22 +446,34 @@ class Product {
         artistId: json['artistId'] as String,
         name: json['name'] as String,
         image: (json['image'] as String?) ?? '📦',
+        imagePath: json['imagePath'] as String?,
+        imageUrl: json['imageUrl'] as String?,
         price: (json['price'] as num).toDouble(),
         cost: (json['cost'] as num?)?.toDouble() ?? 0.0,
         categoryId: json['categoryId'] as String,
         stock: (json['stock'] as num).toInt(),
         isBestseller: (json['isBestseller'] as bool?) ?? false,
+        active: (json['active'] as bool?) ?? true,
+        updatedAt: json['updatedAt'] != null
+            ? DateTime.parse(json['updatedAt'] as String)
+            : null,
+        updatedBy: json['updatedBy'] as String?,
       );
 
   Product copyWith({
     String? name,
     String? image,
+    String? imagePath,
+    String? imageUrl,
     double? price,
     double? cost,
     String? categoryId,
     int? stock,
     bool? isBestseller,
+    bool? active,
     String? artistId,
+    DateTime? updatedAt,
+    String? updatedBy,
   }) {
     return Product(
       id: id,
@@ -345,16 +481,23 @@ class Product {
       artistId: artistId ?? this.artistId,
       name: name ?? this.name,
       image: image ?? this.image,
+      imagePath: imagePath ?? this.imagePath,
+      imageUrl: imageUrl ?? this.imageUrl,
       price: price ?? this.price,
       cost: cost ?? this.cost,
       categoryId: categoryId ?? this.categoryId,
       stock: stock ?? this.stock,
       isBestseller: isBestseller ?? this.isBestseller,
+      active: active ?? this.active,
+      updatedAt: updatedAt ?? this.updatedAt,
+      updatedBy: updatedBy ?? this.updatedBy,
     );
   }
 }
 
-/// 7. Event Model & EventArtist (Many-to-Many attending artists)
+/// 10. Event Model & Event Product / Artist selections
+enum EventStatus { planned, active, closed }
+
 class Event {
   final String id;
   final String shopId;
@@ -362,6 +505,9 @@ class Event {
   final DateTime startDate;
   final DateTime endDate;
   final bool isActive;
+  final EventStatus status;
+  final List<String> eventArtistIds;
+  final List<String> eventProductIds;
 
   Event({
     String? id,
@@ -370,7 +516,12 @@ class Event {
     required this.startDate,
     required this.endDate,
     this.isActive = true,
-  }) : id = id ?? _uuid.v4();
+    this.status = EventStatus.active,
+    List<String>? eventArtistIds,
+    List<String>? eventProductIds,
+  })  : id = id ?? _uuid.v4(),
+        eventArtistIds = eventArtistIds ?? [],
+        eventProductIds = eventProductIds ?? [];
 
   Map<String, dynamic> toJson() => {
         'id': id,
@@ -379,6 +530,9 @@ class Event {
         'startDate': startDate.toIso8601String(),
         'endDate': endDate.toIso8601String(),
         'isActive': isActive,
+        'status': status.name,
+        'eventArtistIds': eventArtistIds,
+        'eventProductIds': eventProductIds,
       };
 
   factory Event.fromJson(Map<String, dynamic> json) => Event(
@@ -388,6 +542,15 @@ class Event {
         startDate: DateTime.parse(json['startDate'] as String),
         endDate: DateTime.parse(json['endDate'] as String),
         isActive: (json['isActive'] as bool?) ?? true,
+        status: EventStatus.values.byName((json['status'] as String?) ?? 'active'),
+        eventArtistIds: (json['eventArtistIds'] as List<dynamic>?)
+                ?.map((e) => e as String)
+                .toList() ??
+            [],
+        eventProductIds: (json['eventProductIds'] as List<dynamic>?)
+                ?.map((e) => e as String)
+                .toList() ??
+            [],
       );
 
   Event copyWith({
@@ -395,6 +558,9 @@ class Event {
     DateTime? startDate,
     DateTime? endDate,
     bool? isActive,
+    EventStatus? status,
+    List<String>? eventArtistIds,
+    List<String>? eventProductIds,
   }) {
     return Event(
       id: id,
@@ -403,6 +569,9 @@ class Event {
       startDate: startDate ?? this.startDate,
       endDate: endDate ?? this.endDate,
       isActive: isActive ?? this.isActive,
+      status: status ?? this.status,
+      eventArtistIds: eventArtistIds ?? this.eventArtistIds,
+      eventProductIds: eventProductIds ?? this.eventProductIds,
     );
   }
 }
@@ -431,7 +600,37 @@ class EventArtist {
       );
 }
 
-/// 8. Order Model
+/// 11. Artist Order Summary (for aggregated artist totals embedded in Order)
+class ArtistOrderSummary {
+  final double gross;
+  final double discount;
+  final double net;
+  final int qty;
+
+  ArtistOrderSummary({
+    required this.gross,
+    required this.discount,
+    required this.net,
+    required this.qty,
+  });
+
+  Map<String, dynamic> toJson() => {
+        'gross': gross,
+        'discount': discount,
+        'net': net,
+        'qty': qty,
+      };
+
+  factory ArtistOrderSummary.fromJson(Map<String, dynamic> json) =>
+      ArtistOrderSummary(
+        gross: (json['gross'] as num).toDouble(),
+        discount: (json['discount'] as num).toDouble(),
+        net: (json['net'] as num).toDouble(),
+        qty: (json['qty'] as num).toInt(),
+      );
+}
+
+/// 12. Order Model (Atomic array items + artistTotals aggregation)
 enum OrderStatus { completed, voided }
 enum PaymentMethod { cash, qr }
 
@@ -441,13 +640,22 @@ class Order {
   final String eventId;
   final OrderStatus status;
   final PaymentMethod paymentMethod;
+  final double subtotal;
+  final double discountTotal;
   final double total;
   final double cashReceived;
   final double change;
   final DateTime createdAt;
+  final DateTime createdAtClient;
   final bool synced;
   final bool createdOffline;
+  final String? createdBy;
+  final String? deviceId;
+  final DateTime? voidedAt;
+  final String? voidedBy;
+  final String? voidReason;
   final List<OrderItem> items;
+  final Map<String, ArtistOrderSummary> artistTotals;
 
   Order({
     String? id,
@@ -455,15 +663,56 @@ class Order {
     required this.eventId,
     this.status = OrderStatus.completed,
     required this.paymentMethod,
+    double? subtotal,
+    double? discountTotal,
     required this.total,
     this.cashReceived = 0.0,
     this.change = 0.0,
     DateTime? createdAt,
+    DateTime? createdAtClient,
     this.synced = false,
     this.createdOffline = true,
+    this.createdBy,
+    this.deviceId,
+    this.voidedAt,
+    this.voidedBy,
+    this.voidReason,
     required this.items,
+    Map<String, ArtistOrderSummary>? artistTotals,
   })  : id = id ?? _uuid.v4(),
-        createdAt = createdAt ?? DateTime.now();
+        subtotal = subtotal ?? items.fold(0.0, (sum, i) => sum + (i.priceSnapshot * i.qty)),
+        discountTotal = discountTotal ?? items.fold(0.0, (sum, i) => sum + i.discountAmount),
+        createdAt = createdAt ?? DateTime.now(),
+        createdAtClient = createdAtClient ?? (createdAt ?? DateTime.now()),
+        artistTotals = artistTotals ?? _calculateArtistTotals(items);
+
+  static Map<String, ArtistOrderSummary> _calculateArtistTotals(List<OrderItem> items) {
+    final map = <String, Map<String, num>>{};
+    for (var item in items) {
+      final aId = item.artistId;
+      final gross = item.priceSnapshot * item.qty;
+      final discount = item.discountAmount;
+      final net = gross - discount;
+      final qty = item.qty;
+
+      map[aId] = {
+        'gross': (map[aId]?['gross'] ?? 0.0) + gross,
+        'discount': (map[aId]?['discount'] ?? 0.0) + discount,
+        'net': (map[aId]?['net'] ?? 0.0) + net,
+        'qty': (map[aId]?['qty'] ?? 0) + qty,
+      };
+    }
+
+    return map.map((key, val) => MapEntry(
+          key,
+          ArtistOrderSummary(
+            gross: val['gross']!.toDouble(),
+            discount: val['discount']!.toDouble(),
+            net: val['net']!.toDouble(),
+            qty: val['qty']!.toInt(),
+          ),
+        ));
+  }
 
   Map<String, dynamic> toJson() => {
         'id': id,
@@ -471,36 +720,75 @@ class Order {
         'eventId': eventId,
         'status': status.name,
         'paymentMethod': paymentMethod.name,
+        'subtotal': subtotal,
+        'discountTotal': discountTotal,
         'total': total,
         'cashReceived': cashReceived,
         'change': change,
         'createdAt': createdAt.toIso8601String(),
+        'createdAtClient': createdAtClient.toIso8601String(),
         'synced': synced,
         'createdOffline': createdOffline,
+        'createdBy': createdBy,
+        'deviceId': deviceId,
+        'voidedAt': voidedAt?.toIso8601String(),
+        'voidedBy': voidedBy,
+        'voidReason': voidReason,
         'items': items.map((i) => i.toJson()).toList(),
+        'artistTotals':
+            artistTotals.map((key, val) => MapEntry(key, val.toJson())),
       };
 
-  factory Order.fromJson(Map<String, dynamic> json) => Order(
-        id: json['id'] as String,
-        shopId: json['shopId'] as String,
-        eventId: json['eventId'] as String,
-        status: OrderStatus.values.byName(json['status'] as String),
-        paymentMethod: PaymentMethod.values.byName(json['paymentMethod'] as String),
-        total: (json['total'] as num).toDouble(),
-        cashReceived: (json['cashReceived'] as num?)?.toDouble() ?? 0.0,
-        change: (json['change'] as num?)?.toDouble() ?? 0.0,
-        createdAt: DateTime.parse(json['createdAt'] as String),
-        synced: (json['synced'] as bool?) ?? false,
-        createdOffline: (json['createdOffline'] as bool?) ?? true,
-        items: (json['items'] as List<dynamic>?)
-                ?.map((item) => OrderItem.fromJson(item as Map<String, dynamic>))
-                .toList() ??
-            [],
-      );
+  factory Order.fromJson(Map<String, dynamic> json) {
+    final rawItems = (json['items'] as List<dynamic>?)
+            ?.map((item) => OrderItem.fromJson(item as Map<String, dynamic>))
+            .toList() ??
+        [];
+
+    Map<String, ArtistOrderSummary> parsedTotals = {};
+    if (json['artistTotals'] != null) {
+      final rawMap = json['artistTotals'] as Map<String, dynamic>;
+      parsedTotals = rawMap.map((key, value) =>
+          MapEntry(key, ArtistOrderSummary.fromJson(value as Map<String, dynamic>)));
+    } else {
+      parsedTotals = Order._calculateArtistTotals(rawItems);
+    }
+
+    return Order(
+      id: json['id'] as String,
+      shopId: json['shopId'] as String,
+      eventId: json['eventId'] as String,
+      status: OrderStatus.values.byName(json['status'] as String),
+      paymentMethod: PaymentMethod.values.byName(json['paymentMethod'] as String),
+      subtotal: (json['subtotal'] as num?)?.toDouble(),
+      discountTotal: (json['discountTotal'] as num?)?.toDouble(),
+      total: (json['total'] as num).toDouble(),
+      cashReceived: (json['cashReceived'] as num?)?.toDouble() ?? 0.0,
+      change: (json['change'] as num?)?.toDouble() ?? 0.0,
+      createdAt: DateTime.parse(json['createdAt'] as String),
+      createdAtClient: json['createdAtClient'] != null
+          ? DateTime.parse(json['createdAtClient'] as String)
+          : DateTime.parse(json['createdAt'] as String),
+      synced: (json['synced'] as bool?) ?? false,
+      createdOffline: (json['createdOffline'] as bool?) ?? true,
+      createdBy: json['createdBy'] as String?,
+      deviceId: json['deviceId'] as String?,
+      voidedAt: json['voidedAt'] != null
+          ? DateTime.parse(json['voidedAt'] as String)
+          : null,
+      voidedBy: json['voidedBy'] as String?,
+      voidReason: json['voidReason'] as String?,
+      items: rawItems,
+      artistTotals: parsedTotals,
+    );
+  }
 
   Order copyWith({
     OrderStatus? status,
     bool? synced,
+    DateTime? voidedAt,
+    String? voidedBy,
+    String? voidReason,
   }) {
     return Order(
       id: id,
@@ -508,18 +796,27 @@ class Order {
       eventId: eventId,
       status: status ?? this.status,
       paymentMethod: paymentMethod,
+      subtotal: subtotal,
+      discountTotal: discountTotal,
       total: total,
       cashReceived: cashReceived,
       change: change,
       createdAt: createdAt,
+      createdAtClient: createdAtClient,
       synced: synced ?? this.synced,
       createdOffline: createdOffline,
+      createdBy: createdBy,
+      deviceId: deviceId,
+      voidedAt: voidedAt ?? this.voidedAt,
+      voidedBy: voidedBy ?? this.voidedBy,
+      voidReason: voidReason ?? this.voidReason,
       items: items,
+      artistTotals: artistTotals,
     );
   }
 }
 
-/// 9. OrderItem Model (Artist & Price Snapshot at sale time)
+/// 13. OrderItem Model (Artist & Price Snapshot at sale time)
 class OrderItem {
   final String id;
   final String orderId;
@@ -542,6 +839,7 @@ class OrderItem {
   }) : id = id ?? _uuid.v4();
 
   double get subtotal => (priceSnapshot * qty) - discountAmount;
+  double get lineTotal => subtotal;
 
   Map<String, dynamic> toJson() => {
         'id': id,
@@ -556,17 +854,17 @@ class OrderItem {
 
   factory OrderItem.fromJson(Map<String, dynamic> json) => OrderItem(
         id: json['id'] as String,
-        orderId: json['orderId'] as String,
+        orderId: (json['orderId'] as String?) ?? '',
         productId: json['productId'] as String,
         artistId: json['artistId'] as String,
-        nameSnapshot: json['nameSnapshot'] as String,
-        priceSnapshot: (json['priceSnapshot'] as num).toDouble(),
+        nameSnapshot: (json['nameSnapshot'] as String?) ?? (json['name'] as String? ?? ''),
+        priceSnapshot: ((json['priceSnapshot'] ?? json['price']) as num).toDouble(),
         qty: (json['qty'] as num).toInt(),
-        discountAmount: (json['discountAmount'] as num?)?.toDouble() ?? 0.0,
+        discountAmount: ((json['discountAmount'] ?? json['discount']) as num?)?.toDouble() ?? 0.0,
       );
 }
 
-/// 10. StockMovement Ledger Model
+/// 14. StockMovement Ledger Model
 enum StockMovementType { sale, voidAction, manualAdjust, importAction }
 
 class StockMovement {
@@ -576,6 +874,7 @@ class StockMovement {
   final StockMovementType type;
   final int qtyChange;
   final DateTime createdAt;
+  final String? createdBy;
 
   StockMovement({
     String? id,
@@ -584,6 +883,7 @@ class StockMovement {
     required this.type,
     required this.qtyChange,
     DateTime? createdAt,
+    this.createdBy,
   })  : id = id ?? _uuid.v4(),
         createdAt = createdAt ?? DateTime.now();
 
@@ -594,6 +894,7 @@ class StockMovement {
         'type': type.name,
         'qtyChange': qtyChange,
         'createdAt': createdAt.toIso8601String(),
+        'createdBy': createdBy,
       };
 
   factory StockMovement.fromJson(Map<String, dynamic> json) => StockMovement(
@@ -603,10 +904,11 @@ class StockMovement {
         type: StockMovementType.values.byName(json['type'] as String),
         qtyChange: (json['qtyChange'] as num).toInt(),
         createdAt: DateTime.parse(json['createdAt'] as String),
+        createdBy: json['createdBy'] as String?,
       );
 }
 
-/// 11. Settlement Model (สรุปจ่ายเงินคืนศิลปินหลังปิดงาน)
+/// 15. Settlement Model (สรุปจ่ายเงินคืนศิลปินหลังปิดงาน)
 class Settlement {
   final String id;
   final String shopId;
@@ -618,6 +920,7 @@ class Settlement {
   final bool paid;
   final DateTime? paidAt;
   final String note;
+  final DateTime calculatedAt;
 
   Settlement({
     String? id,
@@ -630,7 +933,9 @@ class Settlement {
     this.paid = false,
     this.paidAt,
     this.note = '',
-  }) : id = id ?? _uuid.v4();
+    DateTime? calculatedAt,
+  })  : id = id ?? '${eventId}_$artistId',
+        calculatedAt = calculatedAt ?? DateTime.now();
 
   Map<String, dynamic> toJson() => {
         'id': id,
@@ -643,6 +948,7 @@ class Settlement {
         'paid': paid,
         'paidAt': paidAt?.toIso8601String(),
         'note': note,
+        'calculatedAt': calculatedAt.toIso8601String(),
       };
 
   factory Settlement.fromJson(Map<String, dynamic> json) => Settlement(
@@ -656,6 +962,9 @@ class Settlement {
         paid: (json['paid'] as bool?) ?? false,
         paidAt: json['paidAt'] != null ? DateTime.parse(json['paidAt'] as String) : null,
         note: (json['note'] as String?) ?? '',
+        calculatedAt: json['calculatedAt'] != null
+            ? DateTime.parse(json['calculatedAt'] as String)
+            : DateTime.now(),
       );
 
   Settlement copyWith({
@@ -674,6 +983,7 @@ class Settlement {
       paid: paid ?? this.paid,
       paidAt: paidAt ?? this.paidAt,
       note: note ?? this.note,
+      calculatedAt: calculatedAt,
     );
   }
 }
