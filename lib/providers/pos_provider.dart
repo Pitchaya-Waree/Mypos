@@ -492,7 +492,11 @@ class PosProvider extends ChangeNotifier {
   }
 
   Future<void> deleteCategory(String id, {String? targetCategoryId}) async {
-    await _db.deleteCategory(id, targetCategoryId: targetCategoryId);
+    await _db.deleteCategory(
+      id,
+      shopId: _currentShopId ?? 'default_shop',
+      targetCategoryId: targetCategoryId,
+    );
     if (_currentFolderId == id) {
       _currentFolderId = null;
     }

@@ -6,7 +6,7 @@
 [![Tests](https://img.shields.io/badge/Tests-27%2F27%20Passing-success)](test/v1_7_acceptance_test.dart)
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
-> ระบบ POS สำหรับขายสินค้าหน้าบูธงานอาร์ตแฟร์ (Art Fair / Creator Booth) ออกแบบมาสำหรับการใช้งานบน **iPad, Android Tablet, Web PWA และ Desktop** ทำงานแบบ **Offline-First 100%** ไม่มีเน็ตหน้างานก็ขายของและสร้าง QR Code ได้อย่างราบรื่น รองรับการแยกหลายร้านค้า (**Multi-Shop Isolation**) คลังกลางสินค้า (Central Catalog) และสถาปัตยกรรม 3 บทบาท (Owner, Manager, Member) ตามข้อกำหนดแผนงาน [plan_v1.7.md](plan_v1.7.md)
+> ระบบ POS สำหรับขายสินค้าหน้าบูธงานอาร์ตแฟร์ (Art Fair / Creator Booth) ออกแบบมาสำหรับการใช้งานบน **iPad, Android Tablet, Web PWA และ Desktop** ทำงานแบบ **Offline-First 100%** ไม่มีเน็ตหน้างานก็ขายของและสร้าง QR Code ได้อย่างราบรื่น รองรับการแยกหลายร้านค้า (**Multi-Shop Isolation**) คลังกลางสินค้า (Central Catalog) และสถาปัตยกรรม 3 บทบาท (Owner, Manager, Member) ตามข้อกำหนดแผนงาน [plan_v1.7.md](docs/plan_v1.7.md)
 
 ---
 
@@ -77,11 +77,19 @@ Mypos/
 ├── storage.rules              # Firebase Storage Rules (Image size & role protection)
 ├── firestore.indexes.json     # Firestore Composite Indexes
 ├── pubspec.yaml               # Flutter Dependencies & Configuration
-├── plan_v1.5.md               # ข้อกำหนดสถาปัตยกรรม Data Model & Acceptance Criteria v1.5
-├── plan_v1.6.md               # ข้อกำหนด Multi-Shop Isolation, Seed Data ร้าน A/B v1.6
-├── plan_v1.7.md               # ข้อกำหนด Flutter + Firebase, 3 Roles, Central Catalog, Negative Stock v1.7
-├── README.md                  # เอกสารแนะนำและคู่มือโปรเจกต์
-└── README_APP.md              # คู่มือทางเทคนิคสำหรับแอปพลิเคชัน Flutter
+├── index.html                 # เว็บไซต์ Landing Page แนะนำระบบ MyPOS
+├── components/                # UI Components ของเว็บ Landing Page
+├── css/                       # Stylesheets ของเว็บ Landing Page
+├── js/                        # JavaScript & i18n scripts
+├── docs/                      # เอกสารสถาปัตยกรรม แผนงาน และคู่มือ
+│   ├── DESIGN.md              # แนวทางการออกแบบ UI/UX
+│   ├── plan.md                # แผนงานฉบับเริ่มต้น
+│   ├── plan_v1.5.md           # ข้อกำหนด Data Model & Acceptance Criteria v1.5
+│   ├── plan_v1.6.md           # ข้อกำหนด Multi-Shop Isolation & Seed Data v1.6
+│   ├── plan_v1.7.md           # ข้อกำหนด Flutter + Firebase, 3 Roles, Central Catalog v1.7
+│   ├── README_APP.md          # คู่มือทางเทคนิคสำหรับ Flutter App
+│   └── assets/                # รูปภาพและ UI mockup assets
+└── README.md                  # เอกสารแนะนำและคู่มือโปรเจกต์
 ```
 
 ---

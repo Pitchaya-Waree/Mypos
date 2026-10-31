@@ -35,8 +35,12 @@ class DatabaseService {
 
   /// Initializes local Hive storage boxes.
   /// Note: Keeps database clean and blank for real production use.
-  Future<void> init() async {
-    await Hive.initFlutter();
+  Future<void> init([String? testPath]) async {
+    if (testPath != null) {
+      Hive.init(testPath);
+    } else {
+      await Hive.initFlutter();
+    }
 
     _shopsBox = await Hive.openBox(boxShops);
     _membersBox = await Hive.openBox(boxMembers);
@@ -169,7 +173,7 @@ class DatabaseService {
     await _categoriesBox.put(category.id, category.toJson());
   }
 
-  Future<void> deleteCategory(String id, {String? targetCategoryId, String? shopId}) async {
+  Future<void> deleteCategory(String id, {required String shopId, String? targetCategoryId}) async {
     // Requirement 4.3: Move products to target category or uncategorized (empty) instead of deleting products!
     final products = getProducts(shopId: shopId);
     for (var prod in products) {

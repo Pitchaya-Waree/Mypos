@@ -251,7 +251,7 @@ class LocalRepositoryRegistry
 
   @override
   Future<void> deleteCategory(String shopId, String categoryId, {String? targetCategoryId}) async =>
-      db.deleteCategory(categoryId, targetCategoryId: targetCategoryId);
+      db.deleteCategory(categoryId, shopId: shopId, targetCategoryId: targetCategoryId);
 
   // EventRepository
   @override
