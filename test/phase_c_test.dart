@@ -86,6 +86,46 @@ void main() {
       expect(content.contains('kCloudFunctionsEnabled'), isFalse); // Kept in Dart
       expect(kCloudFunctionsEnabled, isFalse);
     });
+
+    test('Phase C - Production firestore.rules structural and validator compliance', () {
+      final rulesFile = File('firestore.rules');
+      expect(rulesFile.existsSync(), isTrue);
+
+      final content = rulesFile.readAsStringSync();
+
+      // 1. Assumed Data Model documentation exists
+      expect(content.contains('Assumed Data Model'), isTrue);
+      expect(content.contains('Collection: shops/{shopId}'), isTrue);
+      expect(content.contains('Collection: shops/{shopId}/products/{productId}'), isTrue);
+      expect(content.contains('Collection: shops/{shopId}/orders/{orderId}'), isTrue);
+
+      // 2. Domain Validator Functions exist (Validator Function Pattern)
+      expect(content.contains('function isValidShop('), isTrue);
+      expect(content.contains('function isValidProduct('), isTrue);
+      expect(content.contains('function isValidOrder('), isTrue);
+      expect(content.contains('function isValidStockMovement('), isTrue);
+      expect(content.contains('function isValidSettlement('), isTrue);
+      expect(content.contains('function isValidProductCost('), isTrue);
+
+      // 3. Section 12.1 Acceptance Criteria in rules:
+      // - Member cannot change product price, but can decrement stock
+      expect(content.contains("onlyChanges(['stock', 'updatedAt', 'updatedBy'])"), isTrue);
+      // - Manager cannot read settlements or artistTerms (only isOwner)
+      expect(content.contains("match /settlements/{settlementId}"), isTrue);
+      expect(content.contains("allow read: if isOwner(shopId);"), isTrue);
+      expect(content.contains("match /artistTerms/{artistId}"), isTrue);
+      // - OwnerUid immutable on shop update
+      expect(content.contains("request.resource.data.ownerUid == resource.data.ownerUid"), isTrue);
+      // - Member productCost restricted to linked artist
+      expect(content.contains("resource.data.artistId == myArtistId(shopId)"), isTrue);
+      // - Stock movements immutable (update, delete forbidden)
+      expect(content.contains("match /stockMovements/{movementId}"), isTrue);
+      expect(content.contains("allow update, delete: if false;"), isTrue);
+      // - Order delete forbidden and double-void prevented
+      expect(content.contains("resource.data.status == 'completed'"), isTrue);
+      expect(content.contains("request.resource.data.status == 'voided'"), isTrue);
+      expect(content.contains("allow delete: if false;"), isTrue);
+    });
   });
 }
 
