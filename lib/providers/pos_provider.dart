@@ -35,7 +35,7 @@ class PosProvider extends ChangeNotifier {
   Shop? get shop => _shop;
   List<Member> get members => _members;
   Member? get currentMember => _currentMember;
-  bool get isOwner => _currentMember == null ? true : _currentMember?.role == MemberRole.owner;
+  bool get isOwner => _currentMember?.role == MemberRole.owner;
   bool get isManager => _currentMember?.role == MemberRole.manager;
   bool get isManagerUp => isOwner || isManager;
   bool get isMember => _currentMember?.role == MemberRole.member;
@@ -662,14 +662,43 @@ class PosProvider extends ChangeNotifier {
     required String name,
     required String promptpayId,
     required String promptpayName,
+    String ownerUserId = 'owner_user',
   }) async {
+    final existingShops = _db.getShops().where((s) => s.ownerUserId == ownerUserId && s.name == name);
+    if (existingShops.isNotEmpty) {
+      _currentShopId = existingShops.first.id;
+      refreshData();
+      return existingShops.first;
+    }
+
     final newShop = Shop(
       name: name,
       promptpayId: promptpayId,
       promptpayName: promptpayName,
-      ownerUserId: 'owner_user',
+      ownerUserId: ownerUserId,
     );
     await _db.saveShop(newShop);
+
+    final members = _db.getMembers(shopId: newShop.id);
+    if (!members.any((m) => m.userId == ownerUserId)) {
+      await _db.saveMember(Member(
+        shopId: newShop.id,
+        userId: ownerUserId,
+        email: '',
+        name: 'Owner',
+        role: MemberRole.owner,
+      ));
+    }
+
+    final artists = _db.getArtists(shopId: newShop.id);
+    if (!artists.any((a) => a.linkedUserId == ownerUserId)) {
+      await _db.saveArtist(Artist(
+        shopId: newShop.id,
+        name: 'Main Artist',
+        linkedUserId: ownerUserId,
+      ));
+    }
+
     _currentShopId = newShop.id;
     refreshData();
     return newShop;

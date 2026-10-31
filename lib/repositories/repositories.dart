@@ -151,6 +151,11 @@ class LocalRepositoryRegistry
 
   @override
   Future<Shop> createShop({required String name, required String ownerUserId}) async {
+    final existingShops = db.getShops().where((s) => s.ownerUserId == ownerUserId && s.name == name);
+    if (existingShops.isNotEmpty) {
+      return existingShops.first;
+    }
+
     final shop = Shop(
       name: name,
       ownerUserId: ownerUserId,
@@ -158,6 +163,27 @@ class LocalRepositoryRegistry
       promptpayName: '',
     );
     await db.saveShop(shop);
+
+    final members = db.getMembers(shopId: shop.id);
+    if (!members.any((m) => m.userId == ownerUserId)) {
+      await db.saveMember(Member(
+        shopId: shop.id,
+        userId: ownerUserId,
+        email: '',
+        name: 'Owner',
+        role: MemberRole.owner,
+      ));
+    }
+
+    final artists = db.getArtists(shopId: shop.id);
+    if (!artists.any((a) => a.linkedUserId == ownerUserId)) {
+      await db.saveArtist(Artist(
+        shopId: shop.id,
+        name: 'Main Artist',
+        linkedUserId: ownerUserId,
+      ));
+    }
+
     return shop;
   }
 
