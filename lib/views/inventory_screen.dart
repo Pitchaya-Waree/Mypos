@@ -184,7 +184,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
                             ActionChip(
                               backgroundColor: p.stock <= 5 ? const Color(0xFFFEE2E2) : const Color(0xFFF1F5F9),
                               label: Text(
-                                'เหลือ: ${p.stock}',
+                                p.stock < 0 ? 'ติดลบ: ${p.stock}' : 'เหลือ: ${p.stock}',
                                 style: TextStyle(
                                   fontSize: 12,
                                   fontWeight: FontWeight.bold,
@@ -302,6 +302,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
   void _showProductDialog(BuildContext context, {Product? product}) {
     final pos = context.read<PosProvider>();
     final isEdit = product != null;
+    final canViewCost = isEdit ? pos.canViewCost(product) : (pos.isOwner || pos.currentMember?.invitedArtistId != null);
     final nameCtrl = TextEditingController(text: product?.name ?? '');
     final priceCtrl = TextEditingController(text: product?.price != null ? product!.price.toStringAsFixed(0) : '');
     final costCtrl = TextEditingController(text: product?.cost != null ? product!.cost.toStringAsFixed(0) : '0');
@@ -385,14 +386,16 @@ class _InventoryScreenState extends State<InventoryScreen> {
                             decoration: const InputDecoration(labelText: 'ราคาขาย (฿) *', isDense: true),
                           ),
                         ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: TextField(
-                            controller: costCtrl,
-                            keyboardType: TextInputType.number,
-                            decoration: const InputDecoration(labelText: 'ราคาทุน (฿)', isDense: true),
+                        if (canViewCost) ...[
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: TextField(
+                              controller: costCtrl,
+                              keyboardType: TextInputType.number,
+                              decoration: const InputDecoration(labelText: 'ราคาทุน (฿)', isDense: true),
+                            ),
                           ),
-                        ),
+                        ],
                       ],
                     ),
                     const SizedBox(height: 10),
@@ -437,7 +440,9 @@ class _InventoryScreenState extends State<InventoryScreen> {
                   onPressed: () {
                     final name = nameCtrl.text.trim();
                     final price = double.tryParse(priceCtrl.text) ?? 0.0;
-                    final cost = double.tryParse(costCtrl.text) ?? 0.0;
+                    final cost = canViewCost
+                        ? (double.tryParse(costCtrl.text) ?? 0.0)
+                        : (product?.cost ?? 0.0);
                     final stock = int.tryParse(stockCtrl.text) ?? 0;
 
                     // Acceptance criteria 4.2 validation
@@ -481,7 +486,8 @@ class _InventoryScreenState extends State<InventoryScreen> {
     for (var p in pos.products) {
       final aName = pos.getArtistName(p.artistId);
       final cName = pos.categories.cast<Category?>().firstWhere((c) => c?.id == p.categoryId, orElse: () => null)?.name ?? '';
-      buffer.writeln('${p.id},"${p.name}","$aName","$cName",${p.price},${p.cost},${p.stock}');
+      final costVal = pos.canViewCost(p) ? p.cost.toStringAsFixed(2) : '-';
+      buffer.writeln('${p.id},"${p.name}","$aName","$cName",${p.price},$costVal,${p.stock}');
     }
     Clipboard.setData(ClipboardData(text: buffer.toString()));
     ScaffoldMessenger.of(context).showSnackBar(

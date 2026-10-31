@@ -602,7 +602,6 @@ class PosScreen extends StatelessWidget {
       itemCount: products.length,
       itemBuilder: (context, index) {
         final product = products[index];
-        final isOutOfStock = product.stock <= 0;
         final artistName = pos.getArtistName(product.artistId);
 
         return Material(
@@ -696,7 +695,7 @@ class PosScreen extends StatelessWidget {
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                         decoration: BoxDecoration(
-                          color: isOutOfStock
+                          color: (product.stock <= 0)
                               ? const Color(0xFFFEE2E2)
                               : product.stock <= 10
                                   ? const Color(0xFFFEF3C7)
@@ -704,11 +703,15 @@ class PosScreen extends StatelessWidget {
                           borderRadius: BorderRadius.circular(6),
                         ),
                         child: Text(
-                          isOutOfStock ? 'หมด' : 'เหลือ ${product.stock}',
+                          product.stock < 0
+                              ? 'ติดลบ ${product.stock}'
+                              : product.stock == 0
+                                  ? 'หมด'
+                                  : 'เหลือ ${product.stock}',
                           style: TextStyle(
                             fontSize: 10,
                             fontWeight: FontWeight.bold,
-                            color: isOutOfStock
+                            color: (product.stock <= 0)
                                 ? const Color(0xFFDC2626)
                                 : product.stock <= 10
                                     ? const Color(0xFFD97706)

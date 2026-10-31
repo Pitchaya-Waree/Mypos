@@ -2,23 +2,276 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    function signedIn() { return request.auth != null; }
+    // ===============================================================
+    // Assumed Data Model
+    // ===============================================================
+    //
+    // Collection: users/{uid}
+    //   - displayName: string (optional)
+    //   - email: string (optional)
+    //   - photoUrl: string (optional)
+    //
+    // Collection: users/{uid}/memberships/{shopId}
+    //   - shopId: string (required)
+    //   - shopName: string (optional)
+    //   - role: string ['owner', 'manager', 'member'] (required)
+    //   - joinedAt: string or timestamp (optional)
+    //
+    // Collection: shops/{shopId}
+    //   - id: string (required)
+    //   - name: string 1-100 chars (required)
+    //   - ownerUid: string (required, immutable)
+    //   - promptpayId: string (optional/required)
+    //   - promptpayName: string (optional/required)
+    //   - currency: string (optional, default THB)
+    //   - createdAt: string or timestamp (optional)
+    //
+    // Collection: shops/{shopId}/members/{uid}
+    //   - id: string (required)
+    //   - shopId: string (required)
+    //   - userId: string (required, matches uid)
+    //   - email: string (required)
+    //   - name: string (required)
+    //   - role: string ['owner', 'manager', 'member'] (required)
+    //   - invitedArtistId: string (optional)
+    //   - joinedAt: string or timestamp (optional)
+    //
+    // Collection: shops/{shopId}/invites/{inviteId}
+    //   - id: string (required)
+    //   - shopId: string (required)
+    //   - email: string (required)
+    //   - token: string (optional)
+    //   - tokenHash: string (optional)
+    //   - artistId: string (optional)
+    //   - role: string ['manager', 'member'] (required)
+    //   - createdAt: string or timestamp (required)
+    //   - expiresAt: string or timestamp (required)
+    //   - status: string ['pending', 'accepted', 'expired', 'revoked'] (required)
+    //
+    // Collection: shops/{shopId}/artists/{artistId}
+    //   - id: string (required)
+    //   - shopId: string (required)
+    //   - name: string 1-100 chars (required)
+    //   - linkedUserId: string (optional)
+    //   - commissionRate: number (optional)
+    //   - active: bool (required)
+    //
+    // Collection: shops/{shopId}/artistTerms/{artistId}
+    //   - artistId: string (required)
+    //   - commissionRate: number 0-100 (required)
+    //   - note: string (optional)
+    //
+    // Collection: shops/{shopId}/categories/{categoryId}
+    //   - id: string (required)
+    //   - shopId: string (required)
+    //   - name: string 1-100 chars (required)
+    //   - parentCategoryId: string (optional)
+    //   - sortOrder: number (optional)
+    //
+    // Collection: shops/{shopId}/products/{productId}
+    //   - id: string (required)
+    //   - shopId: string (required)
+    //   - artistId: string (required)
+    //   - name: string 1-100 chars (required)
+    //   - categoryId: string (required)
+    //   - price: number >= 0 (required)
+    //   - stock: number (required, can be negative in v1.7)
+    //   - cost: number (optional)
+    //   - image: string (optional)
+    //   - imagePath: string (optional)
+    //   - imageUrl: string (optional)
+    //   - isBestseller: bool (optional)
+    //   - active: bool (required)
+    //   - updatedAt: string or timestamp (optional)
+    //   - updatedBy: string (optional)
+    //
+    // Collection: shops/{shopId}/productCosts/{productId}
+    //   - productId: string (required)
+    //   - artistId: string (required)
+    //   - cost: number >= 0 (required)
+    //
+    // Collection: shops/{shopId}/events/{eventId}
+    //   - id: string (required)
+    //   - shopId: string (required)
+    //   - name: string 1-100 chars (required)
+    //   - startDate: string or timestamp (required)
+    //   - endDate: string or timestamp (required)
+    //   - isActive: bool (optional)
+    //   - status: string ['planned', 'active', 'closed'] (required)
+    //   - eventArtistIds: list (optional)
+    //   - eventProductIds: list (optional)
+    //
+    // Collection: shops/{shopId}/orders/{orderId}
+    //   - id: string (required)
+    //   - shopId: string (required)
+    //   - eventId: string (required)
+    //   - status: string ['completed', 'voided'] (required)
+    //   - paymentMethod: string ['cash', 'qr'] (required)
+    //   - total: number >= 0 (required)
+    //   - subtotal: number (optional)
+    //   - discountTotal: number (optional)
+    //   - cashReceived: number (optional)
+    //   - change: number (optional)
+    //   - items: list (required)
+    //   - artistTotals: map (required)
+    //   - createdBy: string (required)
+    //   - createdAt: string or timestamp (optional)
+    //   - createdAtClient: string or timestamp (required)
+    //   - synced: bool (optional)
+    //   - createdOffline: bool (optional)
+    //   - deviceId: string (optional)
+    //   - voidedAt: string or timestamp (optional)
+    //   - voidedBy: string (optional)
+    //   - voidReason: string (optional)
+    //
+    // Collection: shops/{shopId}/stockMovements/{movementId}
+    //   - id: string (required)
+    //   - productId: string (required)
+    //   - orderId: string (optional)
+    //   - type: string ['sale', 'voidAction', 'manualAdjust', 'importAction'] (required)
+    //   - qtyChange: number (required)
+    //   - createdAt: string or timestamp (optional)
+    //   - createdBy: string (optional)
+    //
+    // Collection: shops/{shopId}/settlements/{settlementId}
+    //   - id: string (required)
+    //   - shopId: string (required)
+    //   - eventId: string (required)
+    //   - artistId: string (required)
+    //   - grossSales: number (required)
+    //   - commissionAmount: number (required)
+    //   - netPayout: number (required)
+    //   - paid: bool (required)
+    //   - paidAt: string or timestamp (optional)
+    //   - note: string (optional)
+    //   - calculatedAt: string or timestamp (optional)
+    // ===============================================================
+
+    // ===============================================================
+    // Core Helper Functions
+    // ===============================================================
+    function signedIn() {
+      return request.auth != null;
+    }
+
     function memberPath(shopId) {
       return /databases/$(database)/documents/shops/$(shopId)/members/$(request.auth.uid);
     }
-    function isMember(shopId) { return signedIn() && exists(memberPath(shopId)); }
-    function roleOf(shopId) { return get(memberPath(shopId)).data.role; }
-    function isOwner(shopId) { return isMember(shopId) && roleOf(shopId) == 'owner'; }
+
+    function isMember(shopId) {
+      return signedIn() && exists(memberPath(shopId));
+    }
+
+    function roleOf(shopId) {
+      return get(memberPath(shopId)).data.role;
+    }
+
+    function isOwner(shopId) {
+      return isMember(shopId) && roleOf(shopId) == 'owner';
+    }
+
     function isManagerUp(shopId) {
       return isMember(shopId) && roleOf(shopId) in ['owner', 'manager'];
     }
-    function myArtistId(shopId) { return get(memberPath(shopId)).data.get('artistId', null); }
+
+    function myArtistId(shopId) {
+      return get(memberPath(shopId)).data.get('invitedArtistId', get(memberPath(shopId)).data.get('artistId', null));
+    }
+
     function onlyChanges(keys) {
       return request.resource.data.diff(resource.data).affectedKeys().hasOnly(keys);
     }
 
+    function hasOnlyAllowedFields(fields) {
+      return request.resource.data.keys().hasOnly(fields);
+    }
+
+    function hasRequiredFields(fields) {
+      return request.resource.data.keys().hasAll(fields);
+    }
+
+    // ===============================================================
+    // Domain Validator Functions (Validator Function Pattern)
+    // ===============================================================
+
+    function isValidShop(data) {
+      return data.name is string && data.name.size() > 0 && data.name.size() <= 100 &&
+             data.ownerUid is string && data.ownerUid.size() > 0;
+    }
+
+    function isValidInvite(data) {
+      return data.email is string && data.email.size() > 0 &&
+             data.role in ['manager', 'member'] &&
+             data.status in ['pending', 'accepted', 'expired', 'revoked'];
+    }
+
+    function isValidArtist(data) {
+      return data.name is string && data.name.size() > 0 && data.name.size() <= 100 &&
+             data.active is bool;
+    }
+
+    function isValidArtistTerm(data) {
+      return data.artistId is string && data.artistId.size() > 0 &&
+             data.commissionRate is number && data.commissionRate >= 0 && data.commissionRate <= 100;
+    }
+
+    function isValidCategory(data) {
+      return data.name is string && data.name.size() > 0 && data.name.size() <= 100;
+    }
+
+    function isValidProduct(data) {
+      return data.name is string && data.name.size() > 0 && data.name.size() <= 100 &&
+             data.artistId is string && data.artistId.size() > 0 &&
+             data.categoryId is string && data.categoryId.size() > 0 &&
+             data.price is number && data.price >= 0 &&
+             data.stock is number &&
+             data.active is bool;
+    }
+
+    function isValidProductCost(data) {
+      return data.productId is string && data.productId.size() > 0 &&
+             data.artistId is string && data.artistId.size() > 0 &&
+             data.cost is number && data.cost >= 0;
+    }
+
+    function isValidEvent(data) {
+      return data.name is string && data.name.size() > 0 && data.name.size() <= 100 &&
+             data.status in ['planned', 'active', 'closed'];
+    }
+
+    function isValidOrder(data) {
+      return data.shopId is string && data.shopId.size() > 0 &&
+             data.eventId is string && data.eventId.size() > 0 &&
+             data.status in ['completed', 'voided'] &&
+             data.paymentMethod in ['cash', 'qr'] &&
+             data.total is number && data.total >= 0 &&
+             data.items is list &&
+             data.artistTotals is map &&
+             data.createdBy is string && data.createdBy.size() > 0;
+    }
+
+    function isValidStockMovement(data) {
+      return data.productId is string && data.productId.size() > 0 &&
+             data.type in ['sale', 'voidAction', 'manualAdjust', 'importAction'] &&
+             data.qtyChange is number;
+    }
+
+    function isValidSettlement(data) {
+      return data.eventId is string && data.eventId.size() > 0 &&
+             data.artistId is string && data.artistId.size() > 0 &&
+             data.grossSales is number &&
+             data.commissionAmount is number &&
+             data.netPayout is number &&
+             data.paid is bool;
+    }
+
+    // ===============================================================
+    // Collection Match Rules
+    // ===============================================================
+
     match /users/{uid} {
       allow read, write: if signedIn() && request.auth.uid == uid;
+
       match /memberships/{shopId} {
         allow read: if signedIn() && request.auth.uid == uid;
         allow write: if false;                       // Cloud Functions only
@@ -28,6 +281,7 @@ service cloud.firestore {
     match /shops/{shopId} {
       allow read: if isMember(shopId);
       allow update: if isOwner(shopId)
+                    && isValidShop(request.resource.data)
                     && request.resource.data.ownerUid == resource.data.ownerUid;
       allow create, delete: if false;                // createShop (Cloud Function) only
 
@@ -40,43 +294,58 @@ service cloud.firestore {
       match /invites/{inviteId} {
         allow read: if isManagerUp(shopId);
         allow create: if isManagerUp(shopId)
+          && isValidInvite(request.resource.data)
           && request.resource.data.status == 'pending'
           && (isOwner(shopId)
               ? request.resource.data.role in ['manager', 'member']
               : request.resource.data.role == 'member');
-        allow update, delete: if isManagerUp(shopId);   // revoke
+        allow update: if isManagerUp(shopId) && isValidInvite(request.resource.data);
+        allow delete: if isManagerUp(shopId);
       }
 
       match /artists/{artistId} {
         allow read: if isMember(shopId);
-        allow write: if isManagerUp(shopId);
+        allow create: if isManagerUp(shopId) && isValidArtist(request.resource.data);
+        allow update: if isManagerUp(shopId) && isValidArtist(request.resource.data);
+        allow delete: if false;
       }
+
       match /artistTerms/{artistId} {
-        allow read, write: if isOwner(shopId);
+        allow read: if isOwner(shopId);
+        allow create, update: if isOwner(shopId) && isValidArtistTerm(request.resource.data);
+        allow delete: if isOwner(shopId);
       }
+
       match /categories/{categoryId} {
         allow read: if isMember(shopId);
-        allow write: if isManagerUp(shopId);
+        allow create: if isManagerUp(shopId) && isValidCategory(request.resource.data);
+        allow update: if isManagerUp(shopId) && isValidCategory(request.resource.data);
+        allow delete: if isManagerUp(shopId);
       }
 
       match /products/{productId} {
         allow read: if isMember(shopId);
-        allow create: if isManagerUp(shopId);
-        allow update: if isManagerUp(shopId)
-          || (isMember(shopId) && onlyChanges(['stock', 'updatedAt', 'updatedBy']));
+        allow create: if isManagerUp(shopId) && isValidProduct(request.resource.data);
+        allow update: if isValidProduct(request.resource.data)
+          && (isManagerUp(shopId)
+              || (isMember(shopId) && onlyChanges(['stock', 'updatedAt', 'updatedBy'])));
         allow delete: if false;                      // Soft delete only (active: false)
       }
+
       match /productCosts/{productId} {
         allow read: if isOwner(shopId)
           || (isMember(shopId) && resource.data.artistId == myArtistId(shopId));
-        allow create, update: if isOwner(shopId)
-          || (isManagerUp(shopId) && request.resource.data.artistId == myArtistId(shopId));
+        allow create, update: if isValidProductCost(request.resource.data)
+          && (isOwner(shopId)
+              || (isManagerUp(shopId) && request.resource.data.artistId == myArtistId(shopId)));
         allow delete: if isOwner(shopId);
       }
 
       match /events/{eventId} {
         allow read: if isMember(shopId);
-        allow write: if isManagerUp(shopId);
+        allow create, update: if isManagerUp(shopId) && isValidEvent(request.resource.data);
+        allow delete: if isOwner(shopId);
+
         match /{sub}/{docId} {                       // eventArtists, eventProducts
           allow read: if isMember(shopId);
           allow write: if isManagerUp(shopId);
@@ -89,9 +358,11 @@ service cloud.firestore {
         allow list: if isManagerUp(shopId)
           || (isMember(shopId) && resource.data.createdBy == request.auth.uid);
         allow create: if isMember(shopId)
+          && isValidOrder(request.resource.data)
           && request.resource.data.createdBy == request.auth.uid
           && request.resource.data.status == 'completed';
         allow update: if isManagerUp(shopId)
+          && isValidOrder(request.resource.data)
           && resource.data.status == 'completed'
           && request.resource.data.status == 'voided'
           && onlyChanges(['status', 'voidedAt', 'voidedBy', 'voidReason']);
@@ -100,14 +371,15 @@ service cloud.firestore {
 
       match /stockMovements/{movementId} {
         allow read: if isManagerUp(shopId);
-        allow create: if isMember(shopId);
+        allow create: if isMember(shopId) && isValidStockMovement(request.resource.data);
         allow update, delete: if false;
       }
 
       match /settlements/{settlementId} {
-        allow read, write: if isOwner(shopId);
+        allow read: if isOwner(shopId);
+        allow create, update: if isOwner(shopId) && isValidSettlement(request.resource.data);
+        allow delete: if isOwner(shopId);
       }
     }
   }
 }
-

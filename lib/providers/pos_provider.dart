@@ -1,10 +1,15 @@
 import 'package:flutter/foundation.dart' hide Category;
+import 'package:uuid/uuid.dart';
 import '../models/models.dart';
-import '../services/database_service.dart';
+import '../repositories/repositories.dart';
 import '../services/mock_seed_service.dart';
 
+enum BillDiscountType { none, percent, amount }
+
 class PosProvider extends ChangeNotifier {
-  final DatabaseService _db = DatabaseService();
+  final RepositoryRegistry _repo;
+
+  PosProvider({RepositoryRegistry? repo}) : _repo = repo ?? createDefaultRepository();
 
   String? _currentShopId;
   Shop? _shop;
@@ -28,13 +33,17 @@ class PosProvider extends ChangeNotifier {
   String _searchQuery = '';
   bool _isSyncing = false;
 
+  // Track bill discount intent for dynamic re-allocation
+  BillDiscountType _billDiscountType = BillDiscountType.none;
+  double _billDiscountValue = 0.0;
+
   // Getters
   String? get currentShopId => _currentShopId;
-  List<Shop> get allShops => _db.getShops();
+  List<Shop> get allShops => _repo.getShops();
   Shop? get shop => _shop;
   List<Member> get members => _members;
   Member? get currentMember => _currentMember;
-  bool get isOwner => _currentMember == null ? true : _currentMember?.role == MemberRole.owner;
+  bool get isOwner => _currentMember?.role == MemberRole.owner;
   bool get isManager => _currentMember?.role == MemberRole.manager;
   bool get isManagerUp => isOwner || isManager;
   bool get isMember => _currentMember?.role == MemberRole.member;
@@ -70,8 +79,8 @@ class PosProvider extends ChangeNotifier {
   int get unsyncedCount => _orders.where((o) => !o.synced).length;
 
   // Initialize Provider
-  Future<void> init() async {
-    await _db.init();
+  Future<void> init([String? testPath]) async {
+    await _repo.init(testPath);
     refreshData();
   }
 
@@ -83,37 +92,41 @@ class PosProvider extends ChangeNotifier {
     _isAllItemsView = false;
     _searchQuery = '';
     _currentMember = null;
+    _billDiscountType = BillDiscountType.none;
+    _billDiscountValue = 0.0;
     refreshData();
   }
 
   /// Reset or seed data for testing
   Future<void> seedTestData({bool force = true}) async {
-    await MockSeedService.seedAllSampleData(_db, clearExisting: force);
+    await MockSeedService.seedAllSampleData(_repo, clearExisting: force);
     _currentShopId = 'shop_a';
     refreshData();
   }
 
   /// Load complete sample seed data for testing & demonstration
   Future<void> loadSampleSeedData() async {
-    await MockSeedService.seedAllSampleData(_db, clearExisting: true);
+    await MockSeedService.seedAllSampleData(_repo, clearExisting: true);
     _currentShopId = 'shop_a';
     refreshData();
   }
 
   /// Wipe all database tables to a clean, blank slate for real production use
   Future<void> clearAllData() async {
-    await _db.clearAllData();
+    await _repo.clearAllData();
     _currentShopId = null;
     _cart.clear();
     _currentFolderId = null;
     _isAllItemsView = false;
     _searchQuery = '';
     _currentMember = null;
+    _billDiscountType = BillDiscountType.none;
+    _billDiscountValue = 0.0;
     refreshData();
   }
 
   void refreshData() {
-    final shops = _db.getShops();
+    final shops = _repo.getShops();
     if (shops.isNotEmpty) {
       if (_currentShopId == null || !shops.any((s) => s.id == _currentShopId)) {
         _currentShopId = shops.first.id;
@@ -122,25 +135,25 @@ class PosProvider extends ChangeNotifier {
       _currentShopId = null;
     }
 
-    _shop = _db.getShop(_currentShopId);
-    _members = _db.getMembers(shopId: _currentShopId);
+    _shop = _repo.getShopSync(_currentShopId);
+    _members = _repo.getMembers(shopId: _currentShopId);
     _currentMember = _members.isNotEmpty
         ? (_currentMember != null
             ? _members.firstWhere((m) => m.id == _currentMember!.id, orElse: () => _members.first)
             : _members.first)
         : null;
-    _invites = _db.getInvites(shopId: _currentShopId);
-    _artists = _db.getArtists(shopId: _currentShopId);
-    _categories = _db.getCategories(shopId: _currentShopId);
-    _products = _db.getProducts(shopId: _currentShopId);
-    _events = _db.getEvents(shopId: _currentShopId);
-    _activeEvent = _db.getActiveEvent(shopId: _currentShopId);
+    _invites = _repo.getInvites(shopId: _currentShopId);
+    _artists = _repo.getArtists(shopId: _currentShopId);
+    _categories = _repo.getCategories(shopId: _currentShopId);
+    _products = _repo.getProducts(shopId: _currentShopId);
+    _events = _repo.getEvents(shopId: _currentShopId);
+    _activeEvent = _repo.getActiveEvent(shopId: _currentShopId);
     if (_activeEvent != null) {
-      _activeEventArtistIds = _db.getEventArtistIds(_activeEvent!.id);
+      _activeEventArtistIds = _repo.getEventArtistIds(_activeEvent!.id);
     } else {
       _activeEventArtistIds = [];
     }
-    _orders = _db.getOrders(shopId: _currentShopId);
+    _orders = _repo.getOrders(shopId: _currentShopId);
     notifyListeners();
   }
 
@@ -297,11 +310,13 @@ class PosProvider extends ChangeNotifier {
     } else {
       _cart.add(CartItem(product: product, qty: 1));
     }
+    _recalculateDiscounts();
     notifyListeners();
   }
 
   void removeFromCart(String productId) {
     _cart.removeWhere((item) => item.product.id == productId);
+    _recalculateDiscounts();
     notifyListeners();
   }
 
@@ -312,15 +327,15 @@ class PosProvider extends ChangeNotifier {
         _cart.removeAt(index);
       } else {
         _cart[index].qty = newQty;
-        if (_cart[index].discount > _cart[index].product.price * _cart[index].qty) {
-          _cart[index].discount = _cart[index].product.price * _cart[index].qty;
-        }
       }
+      _recalculateDiscounts();
       notifyListeners();
     }
   }
 
   void clearDiscounts() {
+    _billDiscountType = BillDiscountType.none;
+    _billDiscountValue = 0.0;
     for (var item in _cart) {
       item.discount = 0.0;
     }
@@ -329,37 +344,95 @@ class PosProvider extends ChangeNotifier {
 
   void clearCart() {
     _cart.clear();
+    _billDiscountType = BillDiscountType.none;
+    _billDiscountValue = 0.0;
     notifyListeners();
   }
 
-  /// Proportional Whole-Bill Discount (Acceptance Criteria 4.5)
-  /// Divides discount across artists proportionally to their gross value in the cart!
+  void _recalculateDiscounts() {
+    if (_cart.isEmpty) {
+      _billDiscountType = BillDiscountType.none;
+      _billDiscountValue = 0.0;
+      return;
+    }
+
+    if (_billDiscountType == BillDiscountType.none || _billDiscountValue <= 0) {
+      return;
+    }
+
+    final double discountToDistribute;
+    if (_billDiscountType == BillDiscountType.percent) {
+      discountToDistribute = cartSubtotal * (_billDiscountValue / 100.0);
+    } else {
+      discountToDistribute = _billDiscountValue > cartSubtotal ? cartSubtotal : _billDiscountValue;
+    }
+
+    _distributeProportionalDiscount(discountToDistribute);
+  }
+
+  /// Proportional Whole-Bill Discount with exact satang distribution (Hamilton method)
   void applyWholeBillDiscount(double totalDiscount) {
     if (cartSubtotal <= 0 || totalDiscount <= 0) {
       clearDiscounts();
       return;
     }
+    _billDiscountType = BillDiscountType.amount;
+    _billDiscountValue = totalDiscount;
+    final effDiscount = totalDiscount > cartSubtotal ? cartSubtotal : totalDiscount;
+    _distributeProportionalDiscount(effDiscount);
+    notifyListeners();
+  }
 
-    // Group gross totals by artist
+  void _distributeProportionalDiscount(double totalDiscount) {
+    if (cartSubtotal <= 0 || totalDiscount <= 0) {
+      for (var item in _cart) {
+        item.discount = 0.0;
+      }
+      return;
+    }
+
+    // Exact satang distribution using largest remainder method
+    final totalCents = (totalDiscount * 100).round();
     final artistGrossMap = <String, double>{};
     for (var item in _cart) {
       final gross = item.product.price * item.qty;
       artistGrossMap[item.artistId] = (artistGrossMap[item.artistId] ?? 0.0) + gross;
     }
 
-    // Allocate discount per artist based on share
-    for (var item in _cart) {
-      final artistShare = (artistGrossMap[item.artistId] ?? 0.0) / cartSubtotal;
-      final artistDiscountTotal = totalDiscount * artistShare;
-      final itemShareInArtist = (item.product.price * item.qty) / (artistGrossMap[item.artistId] ?? 1.0);
-      final allocated = artistDiscountTotal * itemShareInArtist;
-      final itemGross = item.product.price * item.qty;
-      item.discount = allocated > itemGross ? itemGross : allocated;
+    final allocations = <String, int>{};
+    final remainders = <String, double>{};
+    var allocatedCents = 0;
+
+    for (var entry in artistGrossMap.entries) {
+      final exactCents = totalCents * (entry.value / cartSubtotal);
+      final floorCents = exactCents.floor();
+      allocations[entry.key] = floorCents;
+      remainders[entry.key] = exactCents - floorCents;
+      allocatedCents += floorCents;
     }
-    notifyListeners();
+
+    var leftover = totalCents - allocatedCents;
+    final sortedKeys = artistGrossMap.keys.toList()
+      ..sort((a, b) => (remainders[b] ?? 0).compareTo(remainders[a] ?? 0));
+
+    for (var key in sortedKeys) {
+      if (leftover <= 0) break;
+      allocations[key] = (allocations[key] ?? 0) + 1;
+      leftover--;
+    }
+
+    for (var item in _cart) {
+      final artistDiscountTotal = (allocations[item.artistId] ?? 0) / 100.0;
+      final artistGross = artistGrossMap[item.artistId] ?? 1.0;
+      final itemShare = (item.product.price * item.qty) / artistGross;
+      final allocated = artistDiscountTotal * itemShare;
+      final itemGross = item.product.price * item.qty;
+      item.discount = allocated > itemGross ? itemGross : double.parse(allocated.toStringAsFixed(2));
+    }
   }
 
-  /// Artist-Specific Discount: applies discount ONLY to items belonging to this artist!
+  /// Artist-Specific Discount (Takes precedence over proportional bill re-allocation)
+  // Order of evaluation: Artist-specific discount applies only to items of that artist and takes precedence over proportional whole-bill rebalancing.
   void applyArtistDiscount(String artistId, double discountAmount) {
     if (discountAmount <= 0) {
       for (var item in _cart.where((i) => i.artistId == artistId)) {
@@ -407,11 +480,12 @@ class PosProvider extends ChangeNotifier {
   }) async {
     final shopId = _shop?.id ?? 'default_shop';
     final eventId = _activeEvent?.id ?? 'default_event';
+    final orderId = const Uuid().v4();
 
-    // 1. Snapshot OrderItems with Artist ID & Price
+    // 1. Snapshot OrderItems with Artist ID & Price and matching orderId
     final orderItems = _cart.map((cartItem) {
       return OrderItem(
-        orderId: '',
+        orderId: orderId,
         productId: cartItem.product.id,
         artistId: cartItem.product.artistId, // Essential for settlement!
         nameSnapshot: cartItem.product.name,
@@ -423,6 +497,7 @@ class PosProvider extends ChangeNotifier {
 
     // 2. Create Order (v1.7: with createdBy, createdAtClient, and artistTotals aggregation)
     final order = Order(
+      id: orderId,
       shopId: shopId,
       eventId: eventId,
       status: OrderStatus.completed,
@@ -437,25 +512,8 @@ class PosProvider extends ChangeNotifier {
       items: orderItems,
     );
 
-    await _db.saveOrder(order);
-
-    // 3. Record StockMovement & deduct stock locally (v1.7: stock can be negative!)
-    for (var cartItem in _cart) {
-      await _db.addStockMovement(StockMovement(
-        productId: cartItem.product.id,
-        orderId: order.id,
-        type: StockMovementType.sale,
-        qtyChange: -cartItem.qty,
-        createdBy: order.createdBy,
-      ));
-
-      final updatedStock = cartItem.product.stock - cartItem.qty;
-      await _db.saveProduct(cartItem.product.copyWith(
-        stock: updatedStock,
-        updatedAt: DateTime.now(),
-        updatedBy: order.createdBy,
-      ));
-    }
+    // Atomic Order Placement & Stock Movement Ledger
+    await _repo.placeOrder(order);
 
     clearCart();
     refreshData();
@@ -463,8 +521,9 @@ class PosProvider extends ChangeNotifier {
   }
 
   Future<void> voidOrder(String orderId, {String voidReason = 'Customer void'}) async {
-    await _db.voidOrder(
-      orderId,
+    await _repo.voidOrder(
+      shopId: _currentShopId ?? 'default_shop',
+      orderId: orderId,
       voidedBy: _currentMember?.userId ?? 'system',
       voidReason: voidReason,
     );
@@ -477,7 +536,7 @@ class PosProvider extends ChangeNotifier {
     notifyListeners();
 
     await Future.delayed(const Duration(milliseconds: 1000));
-    await _db.markAllSynced(shopId: _currentShopId);
+    await _repo.markAllSynced(shopId: _currentShopId);
 
     _isSyncing = false;
     refreshData();
@@ -487,12 +546,16 @@ class PosProvider extends ChangeNotifier {
 
   // --- Category Folder Management (Requirement 4.3) ---
   Future<void> saveCategory(Category category) async {
-    await _db.saveCategory(category);
+    await _repo.saveCategory(category);
     refreshData();
   }
 
   Future<void> deleteCategory(String id, {String? targetCategoryId}) async {
-    await _db.deleteCategory(id, targetCategoryId: targetCategoryId);
+    await _repo.deleteCategory(
+      _currentShopId ?? 'default_shop',
+      id,
+      targetCategoryId: targetCategoryId,
+    );
     if (_currentFolderId == id) {
       _currentFolderId = null;
     }
@@ -501,12 +564,12 @@ class PosProvider extends ChangeNotifier {
 
   // --- Product Management ---
   Future<void> saveProduct(Product product) async {
-    await _db.saveProduct(product);
+    await _repo.saveProduct(product);
     refreshData();
   }
 
   Future<void> deleteProduct(String id) async {
-    await _db.deleteProduct(id);
+    await _repo.deleteProduct(id);
     refreshData();
   }
 
@@ -515,35 +578,28 @@ class PosProvider extends ChangeNotifier {
       name: '${product.name} (Copy)',
       stock: 0,
     );
-    await _db.saveProduct(copy);
+    await _repo.saveProduct(copy);
     refreshData();
   }
 
   Future<void> adjustStock(String productId, int qtyChange, String reason) async {
-    final product = _db.getProduct(productId);
-    if (product == null) return;
-
-    await _db.addStockMovement(StockMovement(
+    await _repo.manualAdjust(
+      shopId: _currentShopId ?? 'default_shop',
       productId: productId,
-      type: StockMovementType.manualAdjust,
       qtyChange: qtyChange,
-    ));
-
-    final newStock = product.stock + qtyChange;
-    await _db.saveProduct(product.copyWith(
-      stock: newStock > 0 ? newStock : 0,
-    ));
+      createdBy: _currentMember?.userId ?? 'system',
+    );
     refreshData();
   }
 
   // --- Artist & Commission Management (Requirement 4.6) ---
   Future<void> saveArtist(Artist artist) async {
-    await _db.saveArtist(artist);
+    await _repo.saveArtist(artist);
     refreshData();
   }
 
   Future<void> deleteArtist(String id) async {
-    await _db.deleteArtist(id);
+    await _repo.deleteArtist(id);
     refreshData();
   }
 
@@ -554,28 +610,28 @@ class PosProvider extends ChangeNotifier {
       email: email,
       artistId: artistId,
     );
-    await _db.saveInvite(invite);
+    await _repo.saveInvite(invite);
     refreshData();
     return invite;
   }
 
   Future<void> removeMember(String memberId) async {
-    await _db.deleteMember(memberId);
+    await _repo.deleteMember(memberId);
     refreshData();
   }
 
   Future<void> revokeInvite(String inviteId) async {
-    await _db.deleteInvite(inviteId);
+    await _repo.deleteInvite(inviteId);
     refreshData();
   }
 
   // --- Event & Attending Artists Management (Requirement 4.11) ---
   Future<void> setActiveEvent(String eventId) async {
     final event = _events.firstWhere((e) => e.id == eventId);
-    await _db.saveEvent(event.copyWith(isActive: true));
+    await _repo.saveEvent(event.copyWith(isActive: true));
 
     // Check if cart has products of non-attending artists
-    final attending = _db.getEventArtistIds(eventId);
+    final attending = _repo.getEventArtistIds(eventId);
     if (attending.isNotEmpty) {
       _cart.removeWhere((item) => !attending.contains(item.artistId));
     }
@@ -584,41 +640,40 @@ class PosProvider extends ChangeNotifier {
   }
 
   Future<void> saveEvent(Event event, List<String> attendingArtistIds) async {
-    await _db.saveEvent(event);
-    await _db.setEventArtists(event.id, attendingArtistIds);
+    await _repo.saveEvent(event);
+    await _repo.setEventArtistsSync(event.id, attendingArtistIds);
     refreshData();
   }
 
   Future<void> deleteEvent(String id) async {
-    await _db.deleteEvent(id);
+    await _repo.deleteEvent(id);
     refreshData();
   }
 
-  // --- Settlement Calculations (Requirement 4.6) ---
+  // --- Settlement Calculations (Item 11 & Requirement 4.6) ---
   Map<String, Settlement> computeSettlementForEvent(String eventId) {
+    final completedOrders = _orders
+        .where((o) => o.eventId == eventId && o.status == OrderStatus.completed)
+        .toList();
+    final savedList = _repo.getSettlements(eventId, shopId: _currentShopId);
     final settlements = <String, Settlement>{};
-    final savedList = _db.getSettlements(eventId);
 
-    // Sum gross sales from completed, non-voided order items
-    final eventOrders = _orders.where(
-      (o) => o.eventId == eventId && o.status == OrderStatus.completed,
-    );
-
-    final grossMap = <String, double>{};
-    for (var o in eventOrders) {
-      for (var item in o.items) {
-        grossMap[item.artistId] = (grossMap[item.artistId] ?? 0.0) + item.subtotal;
-      }
-    }
-
-    // Build settlement per artist
     for (var artist in _artists) {
-      final gross = grossMap[artist.id] ?? 0.0;
-      final rate = artist.commissionRate ?? 0.0;
-      final commission = gross * (rate / 100.0);
-      final net = gross - commission;
+      double gross = 0.0;
+      double discount = 0.0;
+      for (var o in completedOrders) {
+        final summary = o.artistTotals[artist.id];
+        if (summary != null) {
+          gross += summary.gross;
+          discount += summary.discount;
+        }
+      }
 
-      // Check if already paid in DB
+      final netSales = gross - discount;
+      final rate = artist.commissionRate ?? 0.0;
+      final commission = netSales * (rate / 100.0);
+      final netPayout = netSales - commission;
+
       Settlement? existing;
       try {
         existing = savedList.firstWhere((s) => s.artistId == artist.id);
@@ -626,12 +681,12 @@ class PosProvider extends ChangeNotifier {
 
       settlements[artist.id] = Settlement(
         id: existing?.id,
-        shopId: _shop?.id ?? 'default_shop',
+        shopId: _currentShopId ?? 'default_shop',
         eventId: eventId,
         artistId: artist.id,
-        grossSales: gross,
+        grossSales: netSales,
         commissionAmount: commission,
-        netPayout: net,
+        netPayout: netPayout,
         paid: existing?.paid ?? false,
         paidAt: existing?.paidAt,
         note: existing?.note ?? '',
@@ -646,7 +701,7 @@ class PosProvider extends ChangeNotifier {
       paidAt: DateTime.now(),
       note: note,
     );
-    await _db.saveSettlement(updated);
+    await _repo.saveSettlement(updated);
     notifyListeners();
   }
 
@@ -655,14 +710,24 @@ class PosProvider extends ChangeNotifier {
     required String name,
     required String promptpayId,
     required String promptpayName,
+    String ownerUserId = 'owner_user',
   }) async {
+    final existingShops = _repo.getShops().where((s) => s.ownerUserId == ownerUserId && s.name == name);
+    if (existingShops.isNotEmpty) {
+      _currentShopId = existingShops.first.id;
+      refreshData();
+      return existingShops.first;
+    }
+
     final newShop = Shop(
       name: name,
       promptpayId: promptpayId,
       promptpayName: promptpayName,
-      ownerUserId: 'owner_user',
+      ownerUserId: ownerUserId,
     );
-    await _db.saveShop(newShop);
+    await _repo.createShop(name: name, ownerUserId: ownerUserId);
+    await _repo.updateShop(newShop);
+
     _currentShopId = newShop.id;
     refreshData();
     return newShop;
@@ -685,7 +750,7 @@ class PosProvider extends ChangeNotifier {
             promptpayName: promptpayName,
             ownerUserId: 'owner_user',
           );
-    await _db.saveShop(updated);
+    await _repo.updateShop(updated);
     _currentShopId = updated.id;
     refreshData();
   }

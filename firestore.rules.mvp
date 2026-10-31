@@ -1,0 +1,132 @@
+// TEMPORARY: ลบเมื่อ deploy Cloud Functions แล้ว
+// ห้าม deploy ไปที่ใดนอกจากโปรเจกต์ dev เมื่อผู้ใช้สั่งเอง
+// อนุญาต client สร้างร้านของตัวเองใน batch เดียวสำหรับ Spark plan ที่ไม่มี Cloud Functions
+
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() { return request.auth != null; }
+    function memberPath(shopId) {
+      return /databases/$(database)/documents/shops/$(shopId)/members/$(request.auth.uid);
+    }
+    function isMember(shopId) { return signedIn() && exists(memberPath(shopId)); }
+    function roleOf(shopId) { return get(memberPath(shopId)).data.role; }
+    function isOwner(shopId) { return isMember(shopId) && roleOf(shopId) == 'owner'; }
+    function isManagerUp(shopId) {
+      return isMember(shopId) && roleOf(shopId) in ['owner', 'manager'];
+    }
+    function myArtistId(shopId) { return get(memberPath(shopId)).data.get('artistId', null); }
+    function onlyChanges(keys) {
+      return request.resource.data.diff(resource.data).affectedKeys().hasOnly(keys);
+    }
+
+    match /users/{uid} {
+      allow read, write: if signedIn() && request.auth.uid == uid;
+      match /memberships/{shopId} {
+        allow read: if signedIn() && request.auth.uid == uid;
+        // MVP: allow client to register membership during batch createShop
+        allow create: if signedIn() && request.auth.uid == uid
+          && getAfter(/databases/$(database)/documents/shops/$(shopId)).data.ownerUid == uid;
+        allow update, delete: if false;                  // Disallow client edits
+      }
+    }
+
+    match /shops/{shopId} {
+      allow read: if isMember(shopId);
+      allow update: if isOwner(shopId)
+                    && request.resource.data.ownerUid == resource.data.ownerUid;
+      // MVP: allow signed-in user to create shop as owner
+      allow create: if signedIn()
+                    && request.resource.data.ownerUid == request.auth.uid
+                    && !exists(/databases/$(database)/documents/shops/$(shopId));
+      allow delete: if false;
+
+      match /members/{uid} {
+        allow get: if isMember(shopId) && (request.auth.uid == uid || isManagerUp(shopId));
+        allow list: if isManagerUp(shopId);
+        // MVP: allow owner to create their initial owner member record in same batch
+        allow create: if signedIn()
+                      && request.auth.uid == uid
+                      && request.resource.data.role == 'owner'
+                      && getAfter(/databases/$(database)/documents/shops/$(shopId)).data.ownerUid == uid;
+        allow update, delete: if false;                  // Cloud Functions only
+      }
+
+      match /invites/{inviteId} {
+        allow read: if isManagerUp(shopId);
+        allow create: if isManagerUp(shopId)
+          && request.resource.data.status == 'pending'
+          && (isOwner(shopId)
+              ? request.resource.data.role in ['manager', 'member']
+              : request.resource.data.role == 'member');
+        allow update, delete: if isManagerUp(shopId);   // revoke
+      }
+
+      match /artists/{artistId} {
+        allow read: if isMember(shopId);
+        allow write: if isManagerUp(shopId);
+      }
+      match /artistTerms/{artistId} {
+        allow read, write: if isOwner(shopId);
+      }
+      match /categories/{categoryId} {
+        allow read: if isMember(shopId);
+        allow write: if isManagerUp(shopId);
+      }
+
+      match /products/{productId} {
+        allow read: if isMember(shopId);
+        allow create: if isManagerUp(shopId);
+        allow update: if isManagerUp(shopId)
+          || (isMember(shopId) && onlyChanges(['stock', 'updatedAt', 'updatedBy']));
+        allow delete: if false;                      // Soft delete only (active: false)
+      }
+      match /productCosts/{productId} {
+        allow read: if isOwner(shopId)
+          || (isMember(shopId) && resource.data.artistId == myArtistId(shopId));
+        allow create, update: if isOwner(shopId)
+          || (isManagerUp(shopId) && request.resource.data.artistId == myArtistId(shopId));
+        allow delete: if isOwner(shopId);
+      }
+
+      match /events/{eventId} {
+        allow read: if isMember(shopId);
+        allow write: if isManagerUp(shopId);
+        match /{sub}/{docId} {                       // eventArtists, eventProducts
+          allow read: if isMember(shopId);
+          allow write: if isManagerUp(shopId);
+        }
+      }
+
+      match /orders/{orderId} {
+        allow get: if isMember(shopId)
+          && (isManagerUp(shopId) || resource.data.createdBy == request.auth.uid);
+        allow list: if isManagerUp(shopId)
+          || (isMember(shopId) && resource.data.createdBy == request.auth.uid);
+        allow create: if isMember(shopId)
+          && request.resource.data.createdBy == request.auth.uid
+          && request.resource.data.status == 'completed'
+          && !exists(/databases/$(database)/documents/shops/$(shopId)/orders/$(orderId));
+        allow update: if isManagerUp(shopId)
+          && resource.data.status == 'completed'
+          && request.resource.data.status == 'voided'
+          && onlyChanges(['status', 'voidedAt', 'voidedBy', 'voidReason', 'synced']);
+        allow delete: if false;
+      }
+
+      match /stockMovements/{movementId} {
+        allow read: if isManagerUp(shopId);
+        allow create: if isMember(shopId)
+          && !exists(/databases/$(database)/documents/shops/$(shopId)/stockMovements/$(movementId));
+        allow update, delete: if false;              // Ledger: append-only
+      }
+
+      match /settlements/{settlementId} {
+        allow read: if isOwner(shopId);
+        allow write: if isOwner(shopId);
+      }
+    }
+  }
+}
+

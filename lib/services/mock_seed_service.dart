@@ -1,5 +1,4 @@
 import '../models/models.dart';
-import 'database_service.dart';
 
 /// Service responsible ONLY for generating and seeding mock / test data.
 /// Kept completely separate from production database logic so that a fresh
@@ -8,7 +7,7 @@ class MockSeedService {
   /// Clears all database tables and seeds complete sample data for Shop A and Shop B
   /// Includes multi-artist setup, categories (with 2-level folders), products,
   /// active events, and sample orders (Cash, QR with proportional discount, artist discount, and voided).
-  static Future<void> seedAllSampleData(DatabaseService db, {bool clearExisting = true}) async {
+  static Future<void> seedAllSampleData(dynamic db, {bool clearExisting = true}) async {
     if (clearExisting) {
       await db.clearAllData();
     }
