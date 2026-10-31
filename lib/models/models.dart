@@ -2,6 +2,9 @@ import 'package:uuid/uuid.dart';
 
 const _uuid = Uuid();
 
+/// Feature flag: Indicates if Cloud Functions are deployed (required for remote invite/role modification on live Firebase)
+const bool kCloudFunctionsEnabled = false;
+
 /// 1. Shop Model
 class Shop {
   final String id;
