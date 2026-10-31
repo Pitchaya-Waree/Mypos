@@ -3,7 +3,7 @@
 [![Flutter](https://img.shields.io/badge/Flutter-3.24%2B-02569B?logo=flutter)](https://flutter.dev)
 [![Dart](https://img.shields.io/badge/Dart-3.10%2B-0175C2?logo=dart)](https://dart.dev)
 [![Offline-First](https://img.shields.io/badge/Offline--First-Repository%20%2B%20Offline%20Cache-16A34A)](#-offline-first-architecture)
-[![Tests](https://img.shields.io/badge/Tests-27%2F27%20Passing-success)](test/v1_7_acceptance_test.dart)
+[![Tests](https://img.shields.io/badge/Tests-41%2F41%20Passing-success)](test/)
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
 > ระบบ POS สำหรับขายสินค้าหน้าบูธงานอาร์ตแฟร์ (Art Fair / Creator Booth) ออกแบบมาสำหรับการใช้งานบน **iPad, Android Tablet, Web PWA และ Desktop** ทำงานแบบ **Offline-First 100%** ไม่มีเน็ตหน้างานก็ขายของและสร้าง QR Code ได้อย่างราบรื่น รองรับการแยกหลายร้านค้า (**Multi-Shop Isolation**) คลังกลางสินค้า (Central Catalog) และสถาปัตยกรรม 3 บทบาท (Owner, Manager, Member) ตามข้อกำหนดแผนงาน [plan_v1.7.md](docs/plan_v1.7.md)
@@ -69,12 +69,16 @@ Mypos/
 │   ├── services/              # DatabaseService, PromptPayService, MockSeedService
 │   ├── providers/             # PosProvider (State Management & Multi-Artist Calculations)
 │   └── views/                 # หน้าจอ (POS, Inventory, Settlement, Team, History, Reports, Settings)
-├── test/                      # Automated Acceptance & Unit Tests (27 tests passing 100%)
+├── test/                      # Automated Acceptance & Unit Tests (41 tests passing 100%)
+│   ├── phase_a_test.dart          # 4 tests (Isolation, cost masking, orderId binding, least privilege)
+│   ├── phase_b_test.dart          # 6 tests (Delta stock checkout, Hamilton discount, unified settlement)
+│   ├── phase_c_test.dart          # 4 tests (Indexes, query constraints, MVP & production rules validators)
 │   ├── v1_5_acceptance_test.dart  # 18 tests (v1.5 & v1.6 criteria)
-│   ├── v1_7_acceptance_test.dart  # 9 tests (v1.7 roles, central catalog, negative stock, artistTotals)
+│   ├── v1_7_acceptance_test.dart  # 8 tests (v1.7 roles, central catalog, negative stock, artistTotals)
 │   └── widget_test.dart           # Smoke test
-├── firestore.rules            # Firebase Firestore Security Rules (Fine-grained access control)
-├── storage.rules              # Firebase Storage Rules (Image size & role protection)
+├── firestore.rules            # Production Firestore Rules (Validator Function Pattern & RBAC)
+├── firestore.rules.mvp        # Spark MVP bootstrap rules for initial shop creation
+├── storage.rules              # Firebase Storage Rules (Image size <= 300KB & role protection)
 ├── firestore.indexes.json     # Firestore Composite Indexes
 ├── pubspec.yaml               # Flutter Dependencies & Configuration
 ├── index.html                 # เว็บไซต์ Landing Page แนะนำระบบ MyPOS
@@ -83,6 +87,7 @@ Mypos/
 ├── js/                        # JavaScript & i18n scripts
 ├── docs/                      # เอกสารสถาปัตยกรรม แผนงาน และคู่มือ
 │   ├── DESIGN.md              # แนวทางการออกแบบ UI/UX
+│   ├── fix_instructions_v1.md # แผนงานแก้ไขบั๊กและปรับสถาปัตยกรรม Phase A, B, C
 │   ├── plan.md                # แผนงานฉบับเริ่มต้น
 │   ├── plan_v1.5.md           # ข้อกำหนด Data Model & Acceptance Criteria v1.5
 │   ├── plan_v1.6.md           # ข้อกำหนด Multi-Shop Isolation & Seed Data v1.6
@@ -122,13 +127,28 @@ flutter build web --release
 
 ## 🧪 การรันชุดทดสอบ (Automated Testing)
 
-โปรเจกต์มีชุดทดสอบครอบคลุมเงื่อนไข Acceptance Criteria ตามแผน v1.5, v1.6 และ v1.7 ครบ 100% (27/27 Tests):
+โปรเจกต์มีชุดทดสอบครอบคลุมเงื่อนไข Acceptance Criteria ตามแผน v1.5, v1.6, v1.7 และ Phase A, B, C ครบ 100% (41/41 Tests):
 
 ```bash
 flutter test
 ```
 
-### รายการทดสอบที่ผ่านทั้งหมด (27/27 Tests):
+### รายการทดสอบที่ผ่านทั้งหมด (41/41 Tests):
+#### ชุดทดสอบ Phase A, B, C (`fix_instructions_v1.md`):
+- ✅ `Phase A - Item 2`: `deleteCategory` cross-shop isolation ป้องกันผลกระทบข้ามร้านที่มี categoryId ซ้ำกัน
+- ✅ `Phase A - Item 1`: ความเป็นส่วนตัวของราคาทุน ซ่อนทุนจาก Manager และแสดงเฉพาะศิลปินที่ตนผูก
+- ✅ `Phase A - Item 10`: `OrderItem.orderId` ผูกกับ `order.id` เสมอหลังเช็คเอาต์
+- ✅ `Phase A - Item 7`: `createShop` สร้าง Owner และ Default Artist พร้อมกำหนดสิทธิ์ขั้นต่ำ (least-privilege)
+- ✅ `Phase B - Item 3`: เช็คเอาต์คำนวณตัดสต็อกด้วย delta สด (`stock: increment(-qty)`) ป้องกันการทับซ้อนข้อมูล
+- ✅ `Phase B - Item 3`: ป้องกันการตัดสต็อกซ้ำซ้อนจาก orderId เดียวกัน (Idempotent checkout)
+- ✅ `Phase B - Item 8`: คำนวณส่วนลดท้ายบิลแบบ Dynamic เมื่อสินค้าในตะกร้าเปลี่ยนหรือถูกลบ
+- ✅ `Phase B - Item 8`: ปันส่วนลดทั้งบิลแบบเศษสตางค์ไม่ตกหล่นด้วยวิธี Largest-Remainder (Hamilton method)
+- ✅ `Phase B - Item 11`: รวม logic คำนวณ Settlement ใน Repository Layer โดยอ่านจาก `order.artistTotals`
+- ✅ `Phase C - Item 4`: Composite indexes ใน `firestore.indexes.json` สำหรับ query ออร์เดอร์ของ Member
+- ✅ `Phase C - Item 4`: ข้อกำหนด Query Constraints ของ Member ให้กรองเฉพาะ `createdBy == uid`
+- ✅ `Phase C - Item 5`: `firestore.rules.mvp` รองรับการสร้างร้านแบบ Batch บน Spark Tier ชั่วคราว
+- ✅ `Phase C - Production Rules`: ตรวจสอบโครงสร้าง Data Model, Validator Functions และ Acceptance Criteria ใน `firestore.rules`
+
 #### ชุดทดสอบตามแผน v1.5:
 - ✅ `4.5 Proportional Discount`: การเฉลี่ยส่วนลดทั้งบิลตามสัดส่วนยอดขายศิลปิน (30:70)
 - ✅ `4.5 Artist-Specific Discount`: ส่วนลดเฉพาะศิลปิน ไม่กระทบศิลปินคนอื่น
@@ -137,7 +157,7 @@ flutter test
 - ✅ `4.6 Settlement & Commission`: คำนวณยอด Gross, หักค่าคอมมิชชัน 10% และ Net Payout
 - ✅ `4.6 Voided Orders Excluded`: ไม่นำบิลที่ถูก Void มารวมในรายงาน Settlement
 - ✅ `4.8 Cost Visibility Rules`: Owner เห็นต้นทุนทั้งหมด, Member เห็นเฉพาะของศิลปินที่ผูก
-- ✅ `4.4 Stock Limit Prevention`: ป้องกันการสั่งซื้อหรือใส่ตะกร้าเกินสต็อก
+- ✅ `4.4 Overselling Allowed`: สต็อกติดลบได้เมื่อขายสินค้าเกินจำนวนที่มีในคลัง
 - ✅ `PromptPay EMVCo Payload`: ตรวจสอบโครงสร้าง Tag และ CRC16 ของ QR Code ออฟไลน์
 - ✅ `3 & 4.5 Snapshot in OrderItem`: สแนปช็อต artist_id และราคาตอนขาย ไม่เปลี่ยนตามการแก้สินค้าภายหลัง
 - ✅ `4.7 Multi-User Invite`: ลิงก์เชิญมีอายุ 7 วัน และหมดอายุในวันที่ 8
