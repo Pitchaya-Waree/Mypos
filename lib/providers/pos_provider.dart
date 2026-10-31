@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart' hide Category;
+import 'package:uuid/uuid.dart';
 import '../models/models.dart';
 import '../services/database_service.dart';
 import '../services/mock_seed_service.dart';
@@ -407,11 +408,12 @@ class PosProvider extends ChangeNotifier {
   }) async {
     final shopId = _shop?.id ?? 'default_shop';
     final eventId = _activeEvent?.id ?? 'default_event';
+    final orderId = const Uuid().v4();
 
-    // 1. Snapshot OrderItems with Artist ID & Price
+    // 1. Snapshot OrderItems with Artist ID & Price and matching orderId
     final orderItems = _cart.map((cartItem) {
       return OrderItem(
-        orderId: '',
+        orderId: orderId,
         productId: cartItem.product.id,
         artistId: cartItem.product.artistId, // Essential for settlement!
         nameSnapshot: cartItem.product.name,
@@ -423,6 +425,7 @@ class PosProvider extends ChangeNotifier {
 
     // 2. Create Order (v1.7: with createdBy, createdAtClient, and artistTotals aggregation)
     final order = Order(
+      id: orderId,
       shopId: shopId,
       eventId: eventId,
       status: OrderStatus.completed,

@@ -657,8 +657,58 @@ class Order {
   final List<OrderItem> items;
   final Map<String, ArtistOrderSummary> artistTotals;
 
-  Order({
+  factory Order({
     String? id,
+    required String shopId,
+    required String eventId,
+    OrderStatus status = OrderStatus.completed,
+    required PaymentMethod paymentMethod,
+    double? subtotal,
+    double? discountTotal,
+    required double total,
+    double cashReceived = 0.0,
+    double change = 0.0,
+    DateTime? createdAt,
+    DateTime? createdAtClient,
+    bool synced = false,
+    bool createdOffline = true,
+    String? createdBy,
+    String? deviceId,
+    DateTime? voidedAt,
+    String? voidedBy,
+    String? voidReason,
+    required List<OrderItem> items,
+    Map<String, ArtistOrderSummary>? artistTotals,
+  }) {
+    final effectiveId = id ?? _uuid.v4();
+    final fixedItems = items.map((i) => i.orderId.isEmpty ? i.copyWith(orderId: effectiveId) : i).toList();
+    return Order._(
+      id: effectiveId,
+      shopId: shopId,
+      eventId: eventId,
+      status: status,
+      paymentMethod: paymentMethod,
+      subtotal: subtotal,
+      discountTotal: discountTotal,
+      total: total,
+      cashReceived: cashReceived,
+      change: change,
+      createdAt: createdAt,
+      createdAtClient: createdAtClient,
+      synced: synced,
+      createdOffline: createdOffline,
+      createdBy: createdBy,
+      deviceId: deviceId,
+      voidedAt: voidedAt,
+      voidedBy: voidedBy,
+      voidReason: voidReason,
+      items: fixedItems,
+      artistTotals: artistTotals,
+    );
+  }
+
+  Order._({
+    required this.id,
     required this.shopId,
     required this.eventId,
     this.status = OrderStatus.completed,
@@ -679,8 +729,7 @@ class Order {
     this.voidReason,
     required this.items,
     Map<String, ArtistOrderSummary>? artistTotals,
-  })  : id = id ?? _uuid.v4(),
-        subtotal = subtotal ?? items.fold(0.0, (sum, i) => sum + (i.priceSnapshot * i.qty)),
+  })  : subtotal = subtotal ?? items.fold(0.0, (sum, i) => sum + (i.priceSnapshot * i.qty)),
         discountTotal = discountTotal ?? items.fold(0.0, (sum, i) => sum + i.discountAmount),
         createdAt = createdAt ?? DateTime.now(),
         createdAtClient = createdAtClient ?? (createdAt ?? DateTime.now()),
@@ -837,6 +886,28 @@ class OrderItem {
     required this.qty,
     this.discountAmount = 0.0,
   }) : id = id ?? _uuid.v4();
+
+  OrderItem copyWith({
+    String? id,
+    String? orderId,
+    String? productId,
+    String? artistId,
+    String? nameSnapshot,
+    double? priceSnapshot,
+    int? qty,
+    double? discountAmount,
+  }) {
+    return OrderItem(
+      id: id ?? this.id,
+      orderId: orderId ?? this.orderId,
+      productId: productId ?? this.productId,
+      artistId: artistId ?? this.artistId,
+      nameSnapshot: nameSnapshot ?? this.nameSnapshot,
+      priceSnapshot: priceSnapshot ?? this.priceSnapshot,
+      qty: qty ?? this.qty,
+      discountAmount: discountAmount ?? this.discountAmount,
+    );
+  }
 
   double get subtotal => (priceSnapshot * qty) - discountAmount;
   double get lineTotal => subtotal;
