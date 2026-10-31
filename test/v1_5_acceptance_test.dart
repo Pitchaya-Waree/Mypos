@@ -357,9 +357,9 @@ void main() {
     });
 
     // -------------------------------------------------------------
-    // Test 4: Acceptance Criteria 4.4 - Stock limit prevention
+    // Test 4: Acceptance Criteria 4.4 - Overselling allowed with warning & negative stock
     // -------------------------------------------------------------
-    test('4.4 Out of stock prevention: cart qty cannot exceed product stock', () {
+    test('4.4 Overselling allowed: cart qty can exceed product stock resulting in negative stock', () {
       final p = Product(
         id: 'p_limited',
         shopId: 'shop1',
@@ -372,16 +372,16 @@ void main() {
       );
 
       final cart = <CartItem>[];
+      var warningIssued = false;
 
       void addToCart(Product product) {
         final existingIndex = cart.indexWhere((item) => item.product.id == product.id);
         if (existingIndex >= 0) {
-          if (cart[existingIndex].qty + 1 > product.stock) {
-            return; // Blocked!
-          }
           cart[existingIndex].qty += 1;
+          if (cart[existingIndex].qty > product.stock) {
+            warningIssued = true;
+          }
         } else {
-          if (product.stock < 1) return;
           cart.add(CartItem(product: product, qty: 1));
         }
       }
@@ -389,9 +389,14 @@ void main() {
       addToCart(p); // First add -> Qty 1
       expect(cart.length, 1);
       expect(cart[0].qty, 1);
+      expect(warningIssued, isFalse);
 
-      addToCart(p); // Second add -> Blocked, stays at 1!
-      expect(cart[0].qty, 1);
+      addToCart(p); // Second add -> Allowed, warns user, qty becomes 2!
+      expect(cart[0].qty, 2);
+      expect(warningIssued, isTrue);
+
+      final postSaleStock = p.stock - cart[0].qty;
+      expect(postSaleStock, -1);
     });
 
     // -------------------------------------------------------------

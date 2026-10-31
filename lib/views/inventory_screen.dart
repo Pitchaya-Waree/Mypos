@@ -184,7 +184,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
                             ActionChip(
                               backgroundColor: p.stock <= 5 ? const Color(0xFFFEE2E2) : const Color(0xFFF1F5F9),
                               label: Text(
-                                'เหลือ: ${p.stock}',
+                                p.stock < 0 ? 'ติดลบ: ${p.stock}' : 'เหลือ: ${p.stock}',
                                 style: TextStyle(
                                   fontSize: 12,
                                   fontWeight: FontWeight.bold,

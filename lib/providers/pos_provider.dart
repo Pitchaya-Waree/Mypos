@@ -538,7 +538,7 @@ class PosProvider extends ChangeNotifier {
 
     final newStock = product.stock + qtyChange;
     await _db.saveProduct(product.copyWith(
-      stock: newStock > 0 ? newStock : 0,
+      stock: newStock,
     ));
     refreshData();
   }
